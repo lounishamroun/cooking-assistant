@@ -13,7 +13,6 @@ reports/figures/
 __pycache__/
 .ipynb_checkpoints/
 .streamlit/
-poetry.lock
 
 # logs
 *.logs
