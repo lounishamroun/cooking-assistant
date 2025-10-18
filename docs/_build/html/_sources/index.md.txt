@@ -1,0 +1,9 @@
+# Projet Mangetamain
+
+```{toctree}
+:maxdepth: 2
+
+getting-started
+
+
+goal

@@ -1,0 +1,20 @@
+# data
+data/interim/
+data/processed/
+models/
+reports/figures/
+*.pkl
+*.npz
+*.csv
+
+
+# envs & caches
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.streamlit/
+poetry.lock
+
+# logs
+*.logs
+*.log.*

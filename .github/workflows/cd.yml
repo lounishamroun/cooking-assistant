@@ -1,0 +1,6 @@
+name: Projet Mangetamain
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest

@@ -1,0 +1,10 @@
+2025-10-07 13:19:07,246 INFO __main__: Loaded RAW_recipes.csv via kagglehub.load_dataset()
+2025-10-07 13:19:07,506 INFO __main__: Downloaded dataset 'shuyangli94/food-com-recipes-and-user-interactions' to /home/lounis/.cache/kagglehub/datasets/shuyangli94/food-com-recipes-and-user-interactions/versions/2
+2025-10-07 13:19:07,540 INFO __main__: Saved -> data/raw/ingr_map_20251007-131907.pkl
+2025-10-07 13:19:07,586 INFO __main__: Saved -> data/raw/interactions_train_20251007-131907.csv
+2025-10-07 13:19:08,102 INFO __main__: Saved -> data/raw/RAW_recipes_20251007-131907.csv
+2025-10-07 13:19:08,134 INFO __main__: Saved -> data/raw/PP_users_20251007-131907.csv
+2025-10-07 13:19:08,136 INFO __main__: Saved -> data/raw/interactions_test_20251007-131907.csv
+2025-10-07 13:19:08,895 INFO __main__: Saved -> data/raw/RAW_interactions_20251007-131907.csv
+2025-10-07 13:19:09,266 INFO __main__: Saved -> data/raw/PP_recipes_20251007-131907.csv
+2025-10-07 13:19:09,267 INFO __main__: Saved -> data/raw/interactions_validation_20251007-131907.csv
