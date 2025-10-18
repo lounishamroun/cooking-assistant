@@ -1,7 +1,7 @@
-# data
+#data
 #data/interim/
 #data/processed/
-models/
+#models/
 reports/figures/
 *.pkl
 *.npz
