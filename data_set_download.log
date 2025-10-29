@@ -18,3 +18,14 @@
 2025-10-25 16:14:06,310 INFO __main__: Saved -> data\raw\PP_users_20251025-161405.csv
 2025-10-25 16:14:07,109 INFO __main__: Saved -> data\raw\RAW_interactions_20251025-161405.csv
 2025-10-25 16:14:07,309 INFO __main__: Saved -> data\raw\RAW_recipes_20251025-161405.csv
+2025-10-30 00:14:44,096 INFO __main__: Loaded RAW_recipes.csv via kagglehub.load_dataset()
+2025-10-30 00:14:44,348 INFO __main__: Downloaded dataset 'shuyangli94/food-com-recipes-and-user-interactions' to /home/lounis/.cache/kagglehub/datasets/shuyangli94/food-com-recipes-and-user-interactions/versions/2
+2025-10-30 00:14:44,355 INFO __main__: Saved -> data/raw/ingr_map_20251030-001444.pkl
+2025-10-30 00:14:44,416 INFO __main__: Saved -> data/raw/interactions_train_20251030-001444.csv
+2025-10-30 00:14:44,958 INFO __main__: Saved -> data/raw/RAW_recipes_20251030-001444.csv
+2025-10-30 00:14:45,002 INFO __main__: Saved -> data/raw/PP_users_20251030-001444.csv
+2025-10-30 00:14:45,005 INFO __main__: Saved -> data/raw/interactions_test_20251030-001444.csv
+2025-10-30 00:14:46,186 INFO __main__: Saved -> data/raw/RAW_interactions_20251030-001444.csv
+2025-10-30 00:14:46,926 INFO __main__: Saved -> data/raw/PP_recipes_20251030-001444.csv
+2025-10-30 00:14:46,928 INFO __main__: Saved -> data/raw/interactions_validation_20251030-001444.csv
+2025-10-30 00:14:50,492 INFO __main__: Raw data already present in data/raw, skipping download.
