@@ -6,6 +6,7 @@
 
 # I - Modules
 import ast
+from pathlib import Path
 import re
 import pandas as pd
 import numpy as np
@@ -19,13 +20,21 @@ import os
 from tqdm import tqdm
 import time
 
-# Change to the script's directory to ensure correct relative paths
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(script_dir)  # Go up one level from scripts/ to project root
-os.chdir(project_root)
+
+
+RAW_DIR = Path("data/raw")  # define BEFORE using it below
+
+def latest_csv_with_prefix(prefix: str, directory: Path = RAW_DIR) -> Path:
+    candidates = sorted(directory.glob(f"{prefix}_*.csv"))
+    if not candidates:
+        candidates = sorted(directory.glob(f"{prefix}.csv"))
+    if not candidates:
+        raise FileNotFoundError(f"No CSV files starting with '{prefix}' in {directory}")
+    return max(candidates, key=lambda p: p.name)
+
 
 # Find the CSV file that starts with RAW_recipes in the data/raw directory
-csv_file = "data/raw/RAW_recipes.csv"
+csv_file = latest_csv_with_prefix('RAW_recipes')
 if not os.path.exists(csv_file):
     raise FileNotFoundError(f"Could not find {csv_file}. Please ensure the RAW_recipes.csv file is in the data/raw/ folder.")
 df = pd.read_csv(csv_file)
