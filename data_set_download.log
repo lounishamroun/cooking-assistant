@@ -8,3 +8,13 @@
 2025-10-07 13:19:08,895 INFO __main__: Saved -> data/raw/RAW_interactions_20251007-131907.csv
 2025-10-07 13:19:09,266 INFO __main__: Saved -> data/raw/PP_recipes_20251007-131907.csv
 2025-10-07 13:19:09,267 INFO __main__: Saved -> data/raw/interactions_validation_20251007-131907.csv
+2025-10-25 16:14:05,641 ERROR __main__: Failed to load RAW_recipes.csv: Error reading file: 'utf-8' codec can't decode byte 0xdd in position 17: invalid continuation byte
+2025-10-25 16:14:05,882 INFO __main__: Downloaded dataset 'shuyangli94/food-com-recipes-and-user-interactions' to C:\Users\alexa\.cache\kagglehub\datasets\shuyangli94\food-com-recipes-and-user-interactions\versions\2
+2025-10-25 16:14:05,914 INFO __main__: Saved -> data\raw\ingr_map_20251025-161405.pkl
+2025-10-25 16:14:05,917 INFO __main__: Saved -> data\raw\interactions_test_20251025-161405.csv
+2025-10-25 16:14:05,955 INFO __main__: Saved -> data\raw\interactions_train_20251025-161405.csv
+2025-10-25 16:14:05,957 INFO __main__: Saved -> data\raw\interactions_validation_20251025-161405.csv
+2025-10-25 16:14:06,290 INFO __main__: Saved -> data\raw\PP_recipes_20251025-161405.csv
+2025-10-25 16:14:06,310 INFO __main__: Saved -> data\raw\PP_users_20251025-161405.csv
+2025-10-25 16:14:07,109 INFO __main__: Saved -> data\raw\RAW_interactions_20251025-161405.csv
+2025-10-25 16:14:07,309 INFO __main__: Saved -> data\raw\RAW_recipes_20251025-161405.csv
