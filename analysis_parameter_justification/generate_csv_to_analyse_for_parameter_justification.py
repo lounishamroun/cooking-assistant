@@ -27,8 +27,9 @@ def main():
     print("ANALYSE PARAMÈTRES BAYÉSIENS")
     print("=" * 50)
     
-    # Dossier de sortie
-    output_dir = "/home/omarf/projet_mangetamain/cooking-assistant/analysis/results_to_analyse"
+    # Output directory
+    from cooking_assistant.config import JUSTIFICATION_DIR
+    output_dir = str(JUSTIFICATION_DIR)
     os.makedirs(output_dir, exist_ok=True)
     
     print(f"Sortie: {output_dir}")
@@ -36,7 +37,23 @@ def main():
     try:
         # 1. Chargement des données
         print("\n1. Chargement des données...")
-        recipes_df = load_classified_recipes()
+        
+        # Try to load classified recipes first, if not available load RAW and classify
+        try:
+            recipes_df = load_classified_recipes()
+            print("   ✓ Données classifiées trouvées")
+        except FileNotFoundError:
+            print("   ⚠ Données classifiées non trouvées, chargement des données RAW...")
+            from cooking_assistant.data.loader import load_data
+            recipes_df, _ = load_data()
+            
+            # Basic classification for analysis (simplified version)
+            print("   → Classification rapide des recettes...")
+            from cooking_assistant.analysis.scoring import classify_recipe_type
+            
+            # Add basic type classification
+            recipes_df['type'] = recipes_df.apply(classify_recipe_type, axis=1)
+            print(f"   ✓ {len(recipes_df):,} recettes classifiées automatiquement")
         
         from cooking_assistant.data.loader import load_interactions
         interactions_df = load_interactions()
@@ -52,9 +69,9 @@ def main():
         
         # Copier le fichier dans results_to_analyse avec timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        seasonal_output = os.path.join(output_dir, f"distribution_saisonniere_par_type_{timestamp}.csv")
+        seasonal_output = os.path.join(output_dir, f"season_type_distribution_{timestamp}.csv")
         seasonal_results['dataframe'].to_csv(seasonal_output, index=False)
-        print(f"   Sauvegardé: distribution_saisonniere_par_type_{timestamp}.csv")
+        print(f"   Sauvegardé: season_type_distribution_{timestamp}.csv")
         
         # 3. Analyse top reviews
         print("\n3. Analyse top reviews...")

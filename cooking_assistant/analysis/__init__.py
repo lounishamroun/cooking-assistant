@@ -1,4 +1,4 @@
-"""Module d'analyse pour le package cooking_assistant."""
+"""Analysis module for the cooking_assistant package."""
 
 from .seasonal import get_season_from_date
 from .scoring import calculate_bayesian_scores, calculate_top_n_by_type
