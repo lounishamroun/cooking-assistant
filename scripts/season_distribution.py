@@ -70,7 +70,7 @@ def analyze_seasonal_distribution(merged_df=None):
     ])
     
     # Save
-    filename = "distribution_saisonniere_par_type.csv"
+    filename = "season_type_distribution.csv"
     # Use a simple output path since JUSTIFICATION_PATH doesn't exist anymore
     output_dir = "/tmp"  # Will be overridden by calling function
     filepath = os.path.join(output_dir, filename)

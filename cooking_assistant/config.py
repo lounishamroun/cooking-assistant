@@ -1,113 +1,100 @@
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    CONFIGURATION CENTRALE DU PROJET                          ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+CENTRAL PROJECT CONFIGURATION
 
-Configuration unifiée pour le système de recommandation de recettes.
-Contient tous les chemins, paramètres bayésiens, et constantes du projet.
+Unified configuration for the recipe recommendation system.
+Contains all paths, Bayesian parameters, and project constants.
 """
 
 import os
 from pathlib import Path
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CHEMINS DES RÉPERTOIRES
+# DIRECTORY PATHS
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Répertoire racine du projet
+# Project root directory
 ROOT_DIR = Path(__file__).parent.parent
-BASE_DIR = ROOT_DIR
 
-# Données
+# Data directories
 DATA_DIR = ROOT_DIR / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 INTERIM_DATA_DIR = DATA_DIR / "interim"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
-# Sorties et rapports
-RESULTS_DIR = ROOT_DIR / "resultats"
-RESULTS_PROCESSED_DIR = RESULTS_DIR / "processed" 
+# Output and reports
+RESULTS_DIR = PROCESSED_DATA_DIR  # Use standard data/processed directory
+RESULTS_PROCESSED_DIR = PROCESSED_DATA_DIR  # Same as above for compatibility
 REPORTS_DIR = ROOT_DIR / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
-# Documentation
-JUSTIFICATION_DIR = ROOT_DIR / "docs" / "bayesian_parameters_docs_justification"
+# Analysis and justification
+JUSTIFICATION_DIR = ROOT_DIR / "analysis_parameter_justification" / "results_to_analyse"
 
 # Logs
 LOGS_DIR = ROOT_DIR / "logs"
 
-# Créer les dossiers s'ils n'existent pas
+# Create directories if they don't exist
 for directory in [RESULTS_DIR, RESULTS_PROCESSED_DIR, REPORTS_DIR, FIGURES_DIR, JUSTIFICATION_DIR, LOGS_DIR,
                   RAW_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FICHIERS PRINCIPAUX
+# MAIN FILES
 # ══════════════════════════════════════════════════════════════════════════════
 
 # Kaggle dataset handle
 KAGGLE_DATASET_HANDLE = "shuyangli94/food-com-recipes-and-user-interactions"
 
-# Fichiers d'entrée (les noms seront trouvés dynamiquement avec timestamp)
+# Input files (names will be found dynamically with timestamp)
 RAW_RECIPES_PREFIX = "RAW_recipes"
 RAW_INTERACTIONS_PREFIX = "RAW_interactions"
 
-# Fichiers de sortie
+# Output files
 RECIPES_CLASSIFIED_FILE = INTERIM_DATA_DIR / "recipes_classified.csv"
 DOWNLOAD_LOG_FILE = LOGS_DIR / "data_set_download.log"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TYPES DE RECETTES ET SAISONS
+# RECIPE TYPES AND SEASONS
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Types de recettes reconnus
+# Recognized recipe types
 RECIPE_TYPES = ["plat", "dessert", "boisson"]
 
-# Saisons (ordre d'affichage)
+# Seasons (display order)
 SEASONS = ["Spring", "Summer", "Fall", "Winter"]
-SEASON_ORDER = SEASONS  # Alias pour compatibilité
-
-# Mapping français <-> anglais pour les saisons
-SEASON_FR_TO_EN = {
-    "Printemps": "Spring",
-    "Été": "Summer",
-    "Automne": "Fall",
-    "Hiver": "Winter"
-}
-
-SEASON_EN_TO_FR = {v: k for k, v in SEASON_FR_TO_EN.items()}
+SEASON_ORDER = SEASONS  # Alias for compatibility
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PARAMÈTRES BAYÉSIENS PAR TYPE DE RECETTE
+# BAYESIAN PARAMETERS BY RECIPE TYPE
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Les paramètres sont justifiés dans docs/bayesian_parameters_docs_justification/
+# Parameters are justified in docs/bayesian_parameters_docs_justification/
 
-# Paramètres pour les PLATS
+# Parameters for PLATS (main dishes)
 PARAMS_PLATS = {
-    'kb': 65,           # Nombre de "pseudo-avis" pour la régression bayésienne
-    'kpop': 45.0,       # Seuil de popularité (avis nécessaires pour 63% du poids max)
-    'gamma': 1.2        # Facteur d'amplification de la popularité
+    'kb': 65,           # Number of "pseudo-reviews" for Bayesian regression
+    'kpop': 47.0,       # Popularity threshold (reviews needed for 63% of max weight)
+    'gamma': 1.2        # Popularity amplification factor
 }
 
-# Paramètres pour les DESSERTS
+# Parameters for DESSERTS
 PARAMS_DESSERTS = {
-    'kb': 60,           # Plus élevé = plus conservateur (tire vers la moyenne)
-    'kpop': 40.0,       # Les desserts ont généralement plus d'avis
-    'gamma': 1.2        # Amplification modérée
+    'kb': 60,           # Higher = more conservative (pulls toward mean)
+    'kpop': 40.0,       # Desserts generally have more reviews
+    'gamma': 1.2        # Moderate amplification
 }
 
-# Paramètres pour les BOISSONS
+# Parameters for BOISSONS (drinks)
 PARAMS_BOISSONS = {
-    'kb': 20,           # Bas = fait plus confiance aux notes réelles
-    'kpop': 4.0,        # Les boissons ont moins d'avis
-    'gamma': 0.7        # Faible amplification (priorité à la qualité)
+    'kb': 20,           # Low = trusts actual ratings more
+    'kpop': 4.0,        # Drinks have fewer reviews
+    'gamma': 0.7        # Low amplification (quality priority)
 }
 
-# Dictionnaire de mapping pour accès facile
+# Mapping dictionary for easy access
 BAYESIAN_PARAMS = {
     'plat': PARAMS_PLATS,
     'dessert': PARAMS_DESSERTS,
@@ -116,107 +103,68 @@ BAYESIAN_PARAMS = {
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONSTANTES D'ANALYSE
+# ANALYSIS CONSTANTS
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Nombre de recettes dans le top
+# Number of recipes in the top ranking, you can adapt this rank as needed 
 TOP_N = 20
 
-# Nombre de recettes pour l'analyse de popularité
+# Number of recipes for popularity analysis
 TOP_REVIEWS_ANALYSIS_N = 100
 
-# Seuil epsilon pour éviter la division par zéro
+# Epsilon threshold to avoid division by zero
 EPSILON = 1e-6
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PARAMÈTRES DE CLASSIFICATION
-# ══════════════════════════════════════════════════════════════════════════════
-
-# Priors pour la classification (plat, dessert, boisson)
-CLASSIFICATION_PRIORS = [0.50, 0.35, 0.15]
-
-# Classes de classification
-CLASSIFICATION_CLASSES = ["plat", "dessert", "boisson"]
-
-# Prototypes pour la classification par nutrition
-NUTRITIONAL_PROTOTYPES = {
-    'dessert':  {'sweet': 0.68, 'savory': 0.07, 'lean': 0.40},
-    'plat':     {'sweet': 0.12, 'savory': 0.28, 'lean': 0.45},
-    'boisson':  {'sweet': 0.09, 'savory': 0.05, 'lean': 0.85},
-}
-
-# Probabilités canoniques pour les exceptions
-CANONICAL_PROBABILITIES = {
-    'plat':    [0.86, 0.09, 0.05],
-    'dessert': [0.10, 0.84, 0.06],
-    'boisson': [0.06, 0.10, 0.84],
-}
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION DE L'APPLICATION STREAMLIT
-# ══════════════════════════════════════════════════════════════════════════════
-
-APP_TITLE = "🍳 Cooking Assistant"
-APP_SUBTITLE = "Découvrez les meilleures recettes par type et par saison"
-APP_ICON = "🍳"
-APP_LAYOUT = "wide"
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# HELPERS POUR LES CHEMINS
+# PATH HELPERS
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_latest_file_with_prefix(prefix: str, directory: Path = RAW_DATA_DIR) -> Path:
     """
-    Trouve le fichier CSV le plus récent avec un préfixe donné.
+    Finds the most recent CSV file with a given prefix.
     
     Args:
-        prefix: Préfixe du fichier (ex: "RAW_recipes")
-        directory: Répertoire où chercher
+        prefix: File prefix (e.g., "RAW_recipes")
+        directory: Directory to search in
         
     Returns:
-        Path vers le fichier le plus récent
+        Path to the most recent file
         
     Raises:
-        FileNotFoundError: Si aucun fichier n'est trouvé
+        FileNotFoundError: If no file is found
     """
-    # Chercher avec timestamp
+    # Search with timestamp
     candidates = sorted(directory.glob(f"{prefix}_*.csv"))
     
-    # Chercher sans timestamp si aucun fichier trouvé
+    # Search without timestamp if no file found
     if not candidates:
         candidates = sorted(directory.glob(f"{prefix}.csv"))
     
     if not candidates:
         raise FileNotFoundError(
-            f"Aucun fichier CSV commençant par '{prefix}' trouvé dans {directory}"
+            f"No CSV file starting with '{prefix}' found in {directory}"
         )
     
-    # Retourner le plus récent (ordre alphabétique avec timestamp)
+    # Return the most recent (alphabetical order with timestamp)
     return max(candidates, key=lambda p: p.name)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VALIDATION DE LA CONFIGURATION
+# CONFIGURATION VALIDATION
 # ══════════════════════════════════════════════════════════════════════════════
 
 def validate_config():
-    """Valide que la configuration est correcte."""
+    """Validates that the configuration is correct."""
     errors = []
     
-    # Vérifier que les types de recettes correspondent aux paramètres
+    # Check that recipe types match parameters
     if set(RECIPE_TYPES) != set(BAYESIAN_PARAMS.keys()):
-        errors.append("Les RECIPE_TYPES ne correspondent pas aux clés de BAYESIAN_PARAMS")
-    
-    # Vérifier que les classes de classification correspondent
-    if set(RECIPE_TYPES) != set(CLASSIFICATION_CLASSES):
-        errors.append("Les RECIPE_TYPES ne correspondent pas aux CLASSIFICATION_CLASSES")
+        errors.append("RECIPE_TYPES don't match BAYESIAN_PARAMS keys")
     
     if errors:
-        raise ValueError("Erreurs de configuration:\n" + "\n".join(f"  - {e}" for e in errors))
+        raise ValueError("Configuration errors:\n" + "\n".join(f"  - {e}" for e in errors))
 
 
-# Valider au chargement du module
+# Validate on module loading
 validate_config()

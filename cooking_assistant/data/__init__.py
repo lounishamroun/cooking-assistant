@@ -1,4 +1,4 @@
-"""Module de données pour le package cooking_assistant."""
+"""Data module for the cooking_assistant package."""
 
 from .loader import load_recipes, load_interactions, load_classified_recipes
 from .processor import prepare_merged_data

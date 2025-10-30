@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-COOKING ASSISTANT - PIPELINE COMPLET
+COOKING ASSISTANT - COMPLETE PIPELINE
 
-Script principal qui exécute l'ensemble du pipeline pour obtenir les top 20 recettes
-par type et saison.
+Main script that executes the entire pipeline to get top 20 recipes
+by type and season.
 
-Pipeline complet :
-1. Téléchargement des données depuis Kaggle
-2. Classification des recettes par type (plat, dessert, boisson)  
-3. Calcul des scores bayésiens et génération des top 20
+Complete pipeline:
+1. Download data from Kaggle
+2. Classify recipes by type (plat, dessert, boisson)  
+3. Calculate Bayesian scores and generate top 20
 
-Résultats finaux dans data/processed/ :
+Final results in data/processed/:
 - top20_plat_for_each_season.csv
 - top20_dessert_for_each_season.csv  
 - top20_boisson_for_each_season.csv
@@ -22,7 +22,7 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 
-# Ajouter le projet au path
+# Add project to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -31,15 +31,15 @@ from scripts.top_recipe_rankings import main as calculate_rankings
 
 
 def print_header():
-    """Affiche l'en-tête du pipeline."""
-    print("COOKING ASSISTANT - PIPELINE COMPLET")
-    print(f"Démarrage : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    """Displays the pipeline header."""
+    print("COOKING ASSISTANT - COMPLETE PIPELINE")
+    print(f"Starting: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
 
 
 def print_step(step_num, title, description=""):
-    """Affiche le titre d'une étape."""
-    print(f"\nÉTAPE {step_num} : {title}")
+    """Displays a step title."""
+    print(f"\nSTEP {step_num}: {title}")
     if description:
         print(f"   {description}")
     print()
@@ -47,17 +47,17 @@ def print_step(step_num, title, description=""):
 
 def run_classification_script():
     """
-    Exécute le script de classification 01_classifier_generator.py
+    Executes the classification script 01_classifier_generator.py
     
     Returns:
-        bool: True si succès, False si échec
+        bool: True if successful, False if failed
     """
     try:
-        # Obtenir le chemin du script
+        # Get script path
         script_path = project_root / "scripts" / "01_classifier_generator.py"
         python_exe = project_root / ".venv" / "bin" / "python"
         
-        # Exécuter le script de classification
+        # Execute classification script
         result = subprocess.run([
             str(python_exe), 
             str(script_path)
@@ -69,47 +69,47 @@ def run_classification_script():
         )
         
         if result.returncode == 0:
-            print("Classification terminée avec succès")
+            print("Classification completed successfully")
             return True
         else:
-            print(f"Erreur dans la classification :")
-            print(f"   Code de sortie : {result.returncode}")
+            print(f"Error in classification:")
+            print(f"   Exit code: {result.returncode}")
             if result.stderr:
-                print(f"   Erreur : {result.stderr}")
+                print(f"   Error: {result.stderr}")
             return False
             
     except subprocess.TimeoutExpired:
-        print("Timeout : La classification a pris trop de temps")
+        print("Timeout: Classification took too long")
         return False
     except Exception as e:
-        print(f"Erreur lors de l'exécution de la classification : {e}")
+        print(f"Error executing classification: {e}")
         return False
 
 
 def execute_step(step_func, step_name, *args, **kwargs):
     """
-    Exécute une étape et mesure le temps d'exécution.
+    Executes a step and measures execution time.
     
     Args:
-        step_func: Fonction à exécuter
-        step_name: Nom de l'étape pour l'affichage
-        *args, **kwargs: Arguments pour la fonction
+        step_func: Function to execute
+        step_name: Step name for display
+        *args, **kwargs: Arguments for the function
         
     Returns:
-        bool: True si succès, False si échec
+        bool: True if successful, False if failed
     """
     start_time = time.time()
     
     try:
-        print(f"\nLancement de {step_name}...")
+        print(f"\nStarting {step_name}...")
         result = step_func(*args, **kwargs)
         
         elapsed = time.time() - start_time
         minutes = int(elapsed // 60)
         seconds = int(elapsed % 60)
         
-        print(f"{step_name} terminé avec succès !")
-        print(f"Temps d'exécution : {minutes}m {seconds}s")
+        print(f"{step_name} completed successfully!")
+        print(f"Execution time: {minutes}m {seconds}s")
         
         return True
         
@@ -118,21 +118,21 @@ def execute_step(step_func, step_name, *args, **kwargs):
         minutes = int(elapsed // 60)
         seconds = int(elapsed % 60)
         
-        print(f"Erreur dans {step_name} :")
+        print(f"Error in {step_name}:")
         print(f"{str(e)}")
-        print(f"Temps avant échec : {minutes}m {seconds}s")
+        print(f"Time before failure: {minutes}m {seconds}s")
         
         return False
 
 
 def execute_script_step(script_func, step_name):
     """
-    Exécute une étape script et mesure le temps d'exécution.
+    Executes a script step and measures execution time.
     """
     start_time = time.time()
     
     try:
-        print(f"\nLancement de {step_name}...")
+        print(f"\nStarting {step_name}...")
         success = script_func()
         
         elapsed = time.time() - start_time
@@ -140,11 +140,11 @@ def execute_script_step(script_func, step_name):
         seconds = int(elapsed % 60)
         
         if success:
-            print(f"{step_name} terminé avec succès !")
+            print(f"{step_name} completed successfully!")
         else:
-            print(f"{step_name} a échoué !")
+            print(f"{step_name} failed!")
             
-        print(f"Temps d'exécution : {minutes}m {seconds}s")
+        print(f"Execution time: {minutes}m {seconds}s")
         
         return success
         
@@ -153,19 +153,19 @@ def execute_script_step(script_func, step_name):
         minutes = int(elapsed // 60)
         seconds = int(elapsed % 60)
         
-        print(f"Erreur dans {step_name} :")
+        print(f"Error in {step_name}:")
         print(f"   {str(e)}")
-        print(f"Temps avant échec : {minutes}m {seconds}s")
+        print(f"Time before failure: {minutes}m {seconds}s")
         
         return False
 
 
 def main():
     """
-    Pipeline principal pour générer les top 20 recettes.
+    Main pipeline to generate top 20 recipes.
     
     Returns:
-        int: Code de sortie (0 = succès, 1 = échec)
+        int: Exit code (0 = success, 1 = failure)
     """
     print_header()
     
@@ -173,70 +173,70 @@ def main():
     
     try:
         # ══════════════════════════════════════════════════════════════════
-        # ÉTAPE 1 : Téléchargement des données depuis Kaggle
+        # STEP 1: Download data from Kaggle
         # ══════════════════════════════════════════════════════════════════
-        print_step(1, "TÉLÉCHARGEMENT DES DONNÉES", 
-                   "Récupération des datasets depuis Kaggle")
+        print_step(1, "DATA DOWNLOAD", 
+                   "Retrieving datasets from Kaggle")
         
-        if not execute_step(download_data, "Téléchargement Kaggle"):
+        if not execute_step(download_data, "Kaggle Download"):
             return 1
         
         # ══════════════════════════════════════════════════════════════════
-        # ÉTAPE 2 : Classification des recettes par type
+        # STEP 2: Classify recipes by type
         # ══════════════════════════════════════════════════════════════════
-        print_step(2, "CLASSIFICATION DES RECETTES", 
-                   "Analyse ML pour déterminer le type (plat, dessert, boisson)")
+        print_step(2, "RECIPE CLASSIFICATION", 
+                   "ML analysis to determine type (plat, dessert, boisson)")
         
-        if not execute_script_step(run_classification_script, "Classification ML"):
+        if not execute_script_step(run_classification_script, "ML Classification"):
             return 1
         
         # ══════════════════════════════════════════════════════════════════
-        # ÉTAPE 3 : Calcul des top 20 par type et saison
+        # STEP 3: Calculate top 20 by type and season
         # ══════════════════════════════════════════════════════════════════
-        print_step(3, "CALCUL DES TOP 20 FINAUX", 
-                   "Scores bayésiens et génération des CSV finaux")
+        print_step(3, "CALCULATE FINAL TOP 20", 
+                   "Bayesian scores and generation of final CSVs")
         
-        if not execute_step(calculate_rankings, "Calcul des rankings"):
+        if not execute_step(calculate_rankings, "Rankings calculation"):
             return 1
         
         # ══════════════════════════════════════════════════════════════════
-        # RÉSUMÉ FINAL
+        # FINAL SUMMARY
         # ══════════════════════════════════════════════════════════════════
         total_elapsed = time.time() - total_start
         total_minutes = int(total_elapsed // 60)
         total_seconds = int(total_elapsed % 60)
         
         print("\n" + "=" * 80)
-        print("PIPELINE COMPLET TERMINÉ AVEC SUCCÈS !")
+        print("COMPLETE PIPELINE FINISHED SUCCESSFULLY!")
         print("=" * 80)
         
-        print(f"\nRÉSULTATS GÉNÉRÉS :")
-        print(f"Dossier : data/processed/")
-        print(f"Fichiers :")
-        print(f"   • top20_plat_for_each_season.csv      (80 recettes)")
-        print(f"   • top20_dessert_for_each_season.csv   (80 recettes)")  
-        print(f"   • top20_boisson_for_each_season.csv   (80 recettes)")
-        print(f"Total : 240 recettes analysées")
+        print(f"\nGENERATED RESULTS:")
+        print(f"Folder: data/processed/")
+        print(f"Files:")
+        print(f"   • top20_plat_for_each_season.csv      (80 recipes)")
+        print(f"   • top20_dessert_for_each_season.csv   (80 recipes)")  
+        print(f"   • top20_boisson_for_each_season.csv   (80 recipes)")
+        print(f"Total: 240 recipes analyzed")
         
-        print(f"\nTEMPS TOTAL : {total_minutes}m {total_seconds}s")
-        print(f"Fin : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"\nTOTAL TIME: {total_minutes}m {total_seconds}s")
+        print(f"End: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        print(f"\nVos données sont prêtes pour l'analyse !")
+        print(f"\nYour data is ready for analysis!")
         print("=" * 80)
         
         return 0
         
     except KeyboardInterrupt:
-        print(f"\n\nPipeline interrompu par l'utilisateur")
+        print(f"\n\nPipeline interrupted by user")
         return 1
         
     except Exception as e:
-        print(f"\n\nErreur fatale dans le pipeline :")
+        print(f"\n\nFatal error in pipeline:")
         print(f"   {str(e)}")
         return 1
 
 
 if __name__ == "__main__":
-    """Point d'entrée du script."""
+    """Script entry point."""
     exit_code = main()
     sys.exit(exit_code)

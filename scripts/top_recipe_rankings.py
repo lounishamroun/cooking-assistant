@@ -1,20 +1,18 @@
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║          SCRIPT EXEMPLE : Calcul des Top 20 par Type et Saison              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+EXAMPLE SCRIPT: Calculate Top 20 by Type and Season
 
-Ce script montre comment utiliser les modules cooking_assistant pour :
-1. Charger les données
-2. Calculer les top 20 par type et saison
-3. Sauvegarder les résultats
+This script shows how to use cooking_assistant modules to:
+1. Load data
+2. Calculate top 20 by type and season
+3. Save results
 
-Remplace progressivement les anciens scripts monolithiques.
+Progressively replaces old monolithic scripts.
 """
 
 import sys
 from pathlib import Path
 
-# Ajouter le projet au path si nécessaire
+# Add project to path if needed
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -34,52 +32,52 @@ from cooking_assistant.config import (
 
 
 def main():
-    """Point d'entrée principal du script."""
+    """Main entry point of the script."""
     
     print("=" * 80)
-    print("CALCUL DES TOP 20 RECETTES PAR TYPE ET SAISON")
+    print("CALCULATE TOP 20 RECIPES BY TYPE AND SEASON")
     print("=" * 80)
     
-    # 1. Charger les données
-    print("\n Étape 1 : Chargement des données")
+    # 1. Load data
+    print("\n Step 1: Loading data")
     print("-" * 80)
     
     try:
         recipes_df = load_classified_recipes()
         interactions_df = load_interactions()
     except FileNotFoundError as e:
-        print(f"\nErreur : {e}")
-        print("\nConseil : Exécutez d'abord :")
+        print(f"\nError: {e}")
+        print("\nAdvice: Run first:")
         print("   1. python -m cooking_assistant.data.downloader")
         print("   2. python scripts/01_classifier_generator.py")
         return 1
     
-    # 2. Préparer les données fusionnées
-    print("\n🔧 Étape 2 : Préparation et fusion des données")
+    # 2. Prepare merged data
+    print("\n🔧 Step 2: Data preparation and merging")
     print("-" * 80)
     
     merged_df = prepare_merged_data(recipes_df, interactions_df, verbose=True)
     
-    # 3. Calculer les tops pour chaque type
-    print("\nÉtape 3 : Calcul des rankings")
+    # 3. Calculate tops for each type
+    print("\nStep 3: Rankings calculation")
     print("-" * 70)
     
     all_results = {}
     
     for recipe_type in RECIPE_TYPES:
         print(f"\n{'=' * 80}")
-        print(f"Type : {recipe_type.upper()}")
+        print(f"Type: {recipe_type.upper()}")
         print(f"{'=' * 80}")
         
-        # Récupérer les paramètres bayésiens pour ce type
+        # Get Bayesian parameters for this type
         params = BAYESIAN_PARAMS[recipe_type]
         
-        print(f"\nParamètres bayésiens :")
-        print(f"  • kb (régression)    : {params['kb']}")
-        print(f"  • kpop (popularité)  : {params['kpop']}")
+        print(f"\nBayesian parameters:")
+        print(f"  • kb (regression)    : {params['kb']}")
+        print(f"  • kpop (popularity)  : {params['kpop']}")
         print(f"  • gamma (amplif.)    : {params['gamma']}")
         
-        # Calculer les tops
+        # Calculate tops
         tops_by_season = calculate_top_n_by_type(
             merged_df=merged_df,
             recipes_df=recipes_df,
@@ -91,19 +89,19 @@ def main():
         
         all_results[recipe_type] = tops_by_season
     
-    # 4. Sauvegarder les 3 fichiers CSV finaux dans processed/
+    # 4. Save the 3 final CSV files in processed/
     print("\n" + "=" * 80)
-    print("SAUVEGARDE DES FICHIERS CSV FINAUX")
+    print("SAVING FINAL CSV FILES")
     print("=" * 80)
     
     saved_files = save_combined_results_by_type(all_results)
     
-    # 5. Résumé final
+    # 5. Final summary
     print("\n" + "=" * 80)
-    print("TRAITEMENT TERMINÉ")
+    print("PROCESSING COMPLETED")
     print("=" * 80)
     
-    print(f"\nFichiers générés dans : {PROCESSED_DATA_DIR}")
+    print(f"\nFiles generated in: {PROCESSED_DATA_DIR}")
     
     return 0
 
