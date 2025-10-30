@@ -18,7 +18,7 @@ RAW_DIR = Path("data/raw")
 FILES = ["RAW_recipes.csv", "RAW_interactions.csv"]
 
 def has_any_timestamped_copy(stem: str) -> bool:
-    return any(RAW_DIR.glob(f"{stem}_*.csv"))
+    return any(RAW_DIR.glob(f"{stem}_*.csv")) or any(RAW_DIR.glob(f"{stem}.csv"))
 
 def main():
     RAW_DIR.mkdir(parents=True, exist_ok=True)
@@ -26,11 +26,11 @@ def main():
 
     for fname in FILES:
         stem = Path(fname).stem                              # e.g., "RAW_recipes"
-        out = RAW_DIR / f"{stem}{ts}.csv"                  # RAW_recipes<ts>.csv
+        out = RAW_DIR / f"{stem}_{ts}.csv"                  # RAW_recipes<ts>.csv
 
-        # Skip if any timestamped copy already exists
+        # Skip if any copy already exists (timestamped or not)
         if has_any_timestamped_copy(stem):
-            print(f"Already present (timestamped copy exists), skip: {stem}_*.csv")
+            print(f"Already present, skip: {stem}")
             continue
 
         try:
