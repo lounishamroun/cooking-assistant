@@ -73,7 +73,7 @@ def prepare_merged_data(
     
     # Afficher les statistiques par type
     if verbose:
-        print("\n📊 Distribution par type de recette :")
+        print("\nDistribution par type de recette :")
         type_counts = merged_df['type'].value_counts().sort_index()
         for recipe_type, count in type_counts.items():
             percentage = (count / len(merged_df)) * 100
@@ -81,7 +81,7 @@ def prepare_merged_data(
     
     # Afficher les statistiques par saison
     if verbose:
-        print("\n📊 Distribution par saison :")
+        print("\nDistribution par saison :")
         season_counts = merged_df['season'].value_counts()
         for season in ['Spring', 'Summer', 'Fall', 'Winter']:
             count = season_counts.get(season, 0)
@@ -94,7 +94,7 @@ def prepare_merged_data(
     
     if verbose:
         print("\n" + "=" * 80)
-        print(f"✅ Préparation terminée : {len(merged_df):,} lignes fusionnées")
+        print(f"Préparation terminée : {len(merged_df):,} lignes fusionnées")
         print("=" * 80 + "\n")
     
     return merged_df
@@ -107,6 +107,6 @@ if __name__ == "__main__":
     recipes, interactions = load_data()
     merged = prepare_merged_data(recipes, interactions)
     
-    print("\n✅ Test de préparation réussi!")
+    print("\nTest de préparation réussi!")
     print(f"   Colonnes : {list(merged.columns)}")
     print(f"   Shape : {merged.shape}")

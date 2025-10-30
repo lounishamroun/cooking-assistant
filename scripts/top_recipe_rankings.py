@@ -24,10 +24,11 @@ from cooking_assistant.data import (
     prepare_merged_data
 )
 from cooking_assistant.analysis import calculate_top_n_by_type
+from cooking_assistant.utils.results import save_combined_results_by_type
 from cooking_assistant.config import (
     BAYESIAN_PARAMS,
     RECIPE_TYPES,
-    RESULTS_DIR,
+    PROCESSED_DATA_DIR,
     TOP_N
 )
 
@@ -40,16 +41,16 @@ def main():
     print("=" * 80)
     
     # 1. Charger les données
-    print("\n📥 Étape 1 : Chargement des données")
+    print("\n Étape 1 : Chargement des données")
     print("-" * 80)
     
     try:
         recipes_df = load_classified_recipes()
         interactions_df = load_interactions()
     except FileNotFoundError as e:
-        print(f"\n❌ Erreur : {e}")
-        print("\n💡 Conseil : Exécutez d'abord :")
-        print("   1. python scripts/import_raw_data_from_source.py")
+        print(f"\nErreur : {e}")
+        print("\nConseil : Exécutez d'abord :")
+        print("   1. python -m cooking_assistant.data.downloader")
         print("   2. python scripts/01_classifier_generator.py")
         return 1
     
@@ -60,8 +61,8 @@ def main():
     merged_df = prepare_merged_data(recipes_df, interactions_df, verbose=True)
     
     # 3. Calculer les tops pour chaque type
-    print("\n📊 Étape 3 : Calcul des rankings")
-    print("-" * 80)
+    print("\nÉtape 3 : Calcul des rankings")
+    print("-" * 70)
     
     all_results = {}
     
@@ -89,30 +90,20 @@ def main():
         )
         
         all_results[recipe_type] = tops_by_season
-        
-        # Sauvegarder les résultats
-        for season, top_df in tops_by_season.items():
-            output_file = RESULTS_DIR / f"top{TOP_N}_{recipe_type}_{season.lower()}.csv"
-            top_df.to_csv(output_file, index=False, encoding='utf-8')
-            print(f"   💾 Sauvegardé : {output_file.name}")
     
-    # 4. Résumé final
+    # 4. Sauvegarder les 3 fichiers CSV finaux dans processed/
     print("\n" + "=" * 80)
-    print("✅ TRAITEMENT TERMINÉ")
+    print("SAUVEGARDE DES FICHIERS CSV FINAUX")
     print("=" * 80)
     
-    total_files = sum(len(tops) for tops in all_results.values())
-    print(f"\n📁 {total_files} fichiers CSV générés dans : {RESULTS_DIR}")
+    saved_files = save_combined_results_by_type(all_results)
     
-    print("\n📊 Résumé des résultats :")
-    for recipe_type, tops in all_results.items():
-        print(f"\n   {recipe_type.upper()} :")
-        for season in tops.keys():
-            print(f"      • {season:10s} : top{TOP_N}_{recipe_type}_{season.lower()}.csv")
-    
+    # 5. Résumé final
     print("\n" + "=" * 80)
-    print("🎉 Tous les rankings ont été calculés avec succès!")
-    print("=" * 80 + "\n")
+    print("TRAITEMENT TERMINÉ")
+    print("=" * 80)
+    
+    print(f"\nFichiers générés dans : {PROCESSED_DATA_DIR}")
     
     return 0
 
