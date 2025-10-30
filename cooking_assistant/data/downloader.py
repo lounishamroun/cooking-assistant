@@ -1,9 +1,7 @@
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                      TÉLÉCHARGEMENT DES DONNÉES                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+DATA DOWNLOADING
 
-Module pour télécharger les données depuis Kaggle.
+Module to download data from Kaggle.
 """
 
 from pathlib import Path
@@ -12,9 +10,10 @@ import pandas as pd
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
 from kagglehub.exceptions import DataCorruptionError
+from ..config import RAW_DATA_DIR
 
 HANDLE = "shuyangli94/food-com-recipes-and-user-interactions"
-RAW_DIR = Path("data/raw")
+RAW_DIR = RAW_DATA_DIR  # Use centralized configuration
 FILES = ["RAW_recipes.csv", "RAW_interactions.csv"]
 
 def has_any_timestamped_copy(stem: str) -> bool:

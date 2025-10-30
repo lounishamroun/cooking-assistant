@@ -1,10 +1,10 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                   PRÉTRAITEMENT ET FUSION DES DONNÉES                        ║
+║                     DATA PREPROCESSING AND MERGING                           ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-Module pour fusionner les recettes avec les interactions et ajouter les saisons.
-Basé sur scripts/data_loader_preparation.py
+Module to merge recipes with interactions and add seasons.
+Based on scripts/data_loader_preparation.py
 """
 
 import pandas as pd
@@ -19,22 +19,21 @@ def prepare_merged_data(
     verbose: bool = True
 ) -> pd.DataFrame:
     """
-    Fusionne les recettes avec les interactions et ajoute la colonne 'season'.
+    Merges recipes with interactions and adds the 'season' column.
     
     Args:
-        recipes_df: DataFrame des recettes (doit contenir 'id', 'name', 'type')
-        interactions_df: DataFrame des interactions (doit contenir 'recipe_id', 'rating', 'date')
-        verbose: Afficher les informations de progression
+        recipes_df: DataFrame of recipes (must contain 'id', 'name', 'type')
+        interactions_df: DataFrame of interactions (must contain 'recipe_id', 'rating', 'date')
+        verbose: Display progress information
         
     Returns:
-        DataFrame fusionné avec colonnes : recipe_id, name, type, rating, date, season, year
+        Merged DataFrame with columns: recipe_id, name, type, rating, date, season, year
     """
     if verbose:
-        print("\n" + "=" * 80)
-        print("PRÉPARATION DES DONNÉES")
-        print("=" * 80)
+        print("DATA PREPARATION")
+        print("=" * 40)
     
-    # Vérifier que les colonnes nécessaires existent
+    # Check that required columns exist
     required_recipe_cols = ['id', 'name', 'type']
     required_interaction_cols = ['recipe_id', 'rating', 'date']
     
@@ -42,13 +41,13 @@ def prepare_merged_data(
     missing_interaction = [col for col in required_interaction_cols if col not in interactions_df.columns]
     
     if missing_recipe:
-        raise ValueError(f"Colonnes manquantes dans recipes_df : {missing_recipe}")
+        raise ValueError(f"Missing columns in recipes_df: {missing_recipe}")
     if missing_interaction:
-        raise ValueError(f"Colonnes manquantes dans interactions_df : {missing_interaction}")
+        raise ValueError(f"Missing columns in interactions_df: {missing_interaction}")
     
-    # Fusionner les recettes avec les interactions
+    # Merge recipes with interactions
     if verbose:
-        print("\n1️⃣  Fusion des recettes avec les interactions...")
+        print("\n Merging recipes with interactions")
     
     merged_df = interactions_df.merge(
         recipes_df[['id', 'name', 'type']],
@@ -58,55 +57,55 @@ def prepare_merged_data(
     )
     
     if verbose:
-        print(f"   ✓ {len(merged_df):,} lignes après fusion")
+        print(f"{len(merged_df):,} rows after merge")
     
-    # Convertir les dates et ajouter la saison
+    # Convert dates and add season
     if verbose:
-        print("\n2️⃣  Conversion des dates et calcul des saisons...")
+        print("\n2 Converting dates and calculating seasons")
     
     merged_df['date_parsed'] = pd.to_datetime(merged_df['date'], errors='coerce')
     merged_df['season'] = merged_df['date_parsed'].apply(get_season_from_date)
     merged_df['year'] = merged_df['date_parsed'].dt.year
     
     if verbose:
-        print("   ✓ Saisons ajoutées")
+        print("Seasons added")
     
-    # Afficher les statistiques par type
+    # Display statistics by type
     if verbose:
-        print("\nDistribution par type de recette :")
+        print("\nDistribution by recipe type:")
         type_counts = merged_df['type'].value_counts().sort_index()
         for recipe_type, count in type_counts.items():
             percentage = (count / len(merged_df)) * 100
-            print(f"   • {recipe_type:10s} : {count:>8,} avis ({percentage:>5.2f}%)")
+            print(f"   • {recipe_type:10s} : {count:>8,} reviews ({percentage:>5.2f}%)")
     
-    # Afficher les statistiques par saison
+    # Display statistics by season
     if verbose:
-        print("\nDistribution par saison :")
+        print("\nDistribution by season:")
         season_counts = merged_df['season'].value_counts()
         for season in ['Spring', 'Summer', 'Fall', 'Winter']:
             count = season_counts.get(season, 0)
             percentage = (count / len(merged_df)) * 100 if len(merged_df) > 0 else 0
-            print(f"   • {season:10s} : {count:>8,} avis ({percentage:>5.2f}%)")
+            print(f"   • {season:10s} : {count:>8,} reviews ({percentage:>5.2f}%)")
         
         unknown = season_counts.get('Unknown', 0)
         if unknown > 0:
-            print(f"   • {'Unknown':10s} : {unknown:>8,} avis")
+            print(f"   • {'Unknown':10s} : {unknown:>8,} reviews")
     
     if verbose:
         print("\n" + "=" * 80)
-        print(f"Préparation terminée : {len(merged_df):,} lignes fusionnées")
+        print(f"Preparation completed: {len(merged_df):,} merged rows")
         print("=" * 80 + "\n")
     
     return merged_df
 
 
 if __name__ == "__main__":
-    # Test du module
+    # Test module
     from .loader import load_data
     
     recipes, interactions = load_data()
     merged = prepare_merged_data(recipes, interactions)
     
-    print("\nTest de préparation réussi!")
-    print(f"   Colonnes : {list(merged.columns)}")
-    print(f"   Shape : {merged.shape}")
+    print("\nPreparation test successful!")
+    print(f"Columns: {list(merged.columns)}")
+    print(f"Shape: {merged.shape}")

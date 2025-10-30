@@ -2,33 +2,34 @@
 
 ## Purpose
 
-This directory contains analysis files that contribute to justify the choice of **Bayesian parameters** (kb, kpop, gamma) used in the recipe recommendation system for a top 20 evaluation of recipes by season and by type of recipes (dish, beverage, dessert).
+This directory contains analysis files that contribute to justify the choice of **Bayesian parameters** (kb, kpop, gamma) used in the recipe recommendation system for a top 20 evaluation of recipes by season and by type of recipes (dish, beverage, dessert). It also justifies the different hypothesis made during this analysis.
 
 The analysis uses existing scripts from the `scripts/` directory:
 - `scripts/season_distribution.py` - For seasonal distribution analysis  
 - `scripts/top_reviews_analyzer.py` - For top reviews analysis
 
-
-### Generated Files
-
-The analysis generates 2 CSV files saved in `analysis/results_to_analyse/`:
-
-- **`distribution_saisonniere_par_type.csv`** - Seasonal distribution analysis showing review counts by recipe type and season
-- **`top_100_reviews_by_type_season_[timestamp].csv`** - Combined analysis of top 100 recipes by reviews for each recipe type and season
-
 ## How to Generate Analysis Files
 
-These files are automatically generated when running the analysis script:
+These files are autonomous and automatically generated when running the analysis script:
 ```bash
 cd analysis/parameter_justification
 python generate_csv_to_analyse_for_parameter_justification.py
 ```
 
+### Generated Files
+
+The analysis generates 2 CSV files saved in `analysis/results_to_analyse/`:
+
+- **`season_type_distribution.csv`** - Seasonal distribution analysis showing review counts by recipe type and season
+- **`top_100_reviews_by_type_season_[timestamp].csv`** - Combined analysis of top 100 recipes by reviews for each recipe type and season
+
+
+
 The script will:
 1. **Load classified recipes** from the cooking assistant data modules
 2. **Run seasonal distribution analysis** using `scripts/season_distribution.py`
 3. **Run top reviews analysis** using `scripts/top_reviews_analyzer.py`
-4. **Save both CSV files** directly to `analysis/results_to_analyse/`
+4. **Save both CSV files** directly to `analysis_parameter_justification/results_to_analyse/`
 
 This analysis provides immediate insights into the data structure and helps to justify the Bayesian parameters choices.
 
@@ -45,7 +46,7 @@ This analysis provides immediate insights into the data structure and helps to j
 | `valid_reviews` | Number of reviews with rating > 0 |
 | `median_reviews_type_season` | Median number of reviews for the top 100 recipes of this type in this season |
 
-#### `distribution_saisonniere_par_type.csv`
+#### `season_type_distribution.csv`
 | Column | Description |
 |--------|-------------|
 | `Type_Recette` | Recipe type (plat, dessert, boisson) |
@@ -105,7 +106,7 @@ Then, it is the role of the data scientists and his customer after meetings to d
 
 ## Justification of the choice to let the same set of Bayesian Parameters for each season
 
-The decision to apply identical Bayesian parameters (kb, kpop, gamma) across all four seasons for each recipe type is justified by the stability in review distribution patterns observed in the file `distribution_saisonniere_par_type.csv`. Analysis of this file reveals that review volumes are nearly uniformly distributed across seasons: main dishes show 23.71-26.96% per season (±1.6% from the mean), desserts show 23.45-26.39% (±1.5%), and beverages 19.54-28.76% (higher variance but representing only 1.2% of total reviews, thus limited statistical impact). This balanced distribution indicates that user engagement and rating behavior remain fundamentally consistent throughout the year, with no season dominating the dataset or exhibiting drastically different review dynamics.
+The decision to apply identical Bayesian parameters (kb, kpop, gamma) across all four seasons for each recipe type is justified by the stability in review distribution patterns observed in the file `season_type_distribution.csv`. Analysis of this file reveals that review volumes are nearly uniformly distributed across seasons: main dishes show 23.71-26.96% per season (±1.6% from the mean), desserts show 23.45-26.39% (±1.5%), and beverages 19.54-28.76% (higher variance but representing only 1.2% of total reviews, thus limited statistical impact). This balanced distribution indicates that user engagement and rating behavior remain fundamentally consistent throughout the year, with no season dominating the dataset or exhibiting drastically different review dynamics.
 
 Furthermore, examination of `top_100_reviews_by_type_season.csv` shows that median review counts for top recipes maintain proportional stability across seasons: main dishes range from 87-114 reviews (±13% variation), desserts from 61.5-78 reviews (±12% variation), and beverages from 6-8 reviews (±14% variation). While absolute numbers vary moderately, the relative scale and rating reliability remain consistent—a recipe with 100 reviews in Spring is statistically comparable to one with 100 reviews in Fall. The Bayesian Q-Score formula already accounts for seasonal context through the season_avg , which dynamically adjusts for each type-season combination without requiring parameter recalibration. Using different parameters per season would introduce unnecessary complexity, risk overfitting to seasonal noise rather than capturing genuine quality signals, and compromise cross-seasonal comparability. 
 
@@ -129,13 +130,13 @@ The parameter **kpop** serves as the scaling factor in the popularity weight for
 
 The selection of kpop values is based on identifying a review count threshold that typically appears between the 30th and 50th ranked recipes in the top 100 for each type-season combination, corresponding to a popularity weight (Pop_Weight) of approximately 0.9. This calibration ensures that recipes ranking in the top 30-50 range have already achieved 90% of the maximum popularity contribution, meaning they are recognized as sufficiently popular without being penalized relative to the absolute top performers.
 
-After anaylisis of the top `top_100_reviews_by_type_season.csv`, the thresold for dishes is set at 105 for dishes, 90 for dessert and 9 for beverages.
+After anaylisis of the top `top_100_reviews_by_type_season.csv` , the thresold for dishes is set at 108 for dishes, 90 for dessert and 9 for beverages.
 
 The kpop are then calculated thanks to the formulas of Pop_Weight(2) with a wpop=0.9.
 
 Then,
 
-for **dishes(plat)** : kpop = 45
+for **dishes(plat)** : kpop = 47
 for **dessert** : kpop = 40
 for **beverages(boisson)** : kpop = 4
 
@@ -146,6 +147,19 @@ The parameter **gamma** acts as an amplification exponent in the popularity weig
 For **main dishes (plats)** and **desserts**, we set gamma = 1.2, applying moderate amplification to reward recipes that have achieved broad popularity. In these categories, review volumes can vary significantly (dishes: 60-500 reviews, desserts: 40-370 reviews), and a gamma > 1 helps distinguish genuinely crowd-favorite recipes from those with modest but respectable engagement. The value of 1.2 strikes a balance: it's high enough to create meaningful separation in the top 20 rankings, but not so high as to completely overshadow quality ratings.
 
 For **beverages (boissons)**, we use gamma = 0.7, applying a dampening effect that compresses popularity differences. Beverages exhibit dramatically lower review volumes (typically 5-20 reviews for top recipes) and much higher rating homogeneity. With such limited variation, a gamma > 1 would create arbitrary ranking distinctions based on small review count differences (12 vs 11 reviews), which may not reflect true quality differences. By setting gamma < 1, we ensure that the popularity weight rises more gradually, preventing the system from over-prioritizing recipes that happen to have a few extra reviews while still rewarding those with consistently strong engagement. 
+
+## Set of Bayesian parameters with our analysis
+
+| Recipe Type | kb | kpop | gamma |
+|-------------|----|----- |-------|
+| **Plat (Main Dishes)** | 65 | 47 | 1.2 |
+| **Dessert** | 60 | 40 | 1.2 |
+| **Boisson (Beverages)** | 20 | 4 | 0.7 |
+
+## After analysis (How to include this set in overall calculation)
+
+After analysis, you have a set of Bayesian parameters for dishes, beverages and dessert. 
+Then, you just have to change the set of parameters in the **cooking_assistant/utils/config.py files** to adapt your analysis to a specific top recipes by season and by type. 
 
 
 

@@ -3,7 +3,7 @@
 ║                       TOP REVIEWS ANALYZER                                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-This module analyzes the top recipes by number of reviews, organized by type and season.
+This module analyzes the top 100 recipes by number of reviews, organized by type and season.
 Generates CSV files for parameter justification analysis.
 """
 
@@ -116,7 +116,7 @@ def analyze_top_reviews_by_type_season(merged_df, recipes_df, output_dir, top_n=
         type_medians = []
         
         for season in seasons:
-            # Filtrer les données pour ce type et cette saison
+            # Filter data for this type and season
             season_type_data = combined_results[
                 (combined_results['type'] == recipe_type) & 
                 (combined_results['season'] == season)]
@@ -136,21 +136,21 @@ def analyze_top_reviews_by_type_season(merged_df, recipes_df, output_dir, top_n=
                     'Nb_Recettes_Analysees': len(season_type_data)
                 })
                 
-                print(f"{season:8s}: {median_reviews:6.0f} reviews (médiane)")
+                print(f"{season:8s}: {median_reviews:6.0f} reviews (median)")
                 print(f"{max_reviews:6.0f} reviews (max)")
                 print(f"{min_reviews:6.0f} reviews (min)")
             else:
-                print(f"{season:8s}: Aucune donnée")
+                print(f"{season:8s}: No data")
 
-    # Créer le DataFrame des médianes
+    # Create median DataFrame
     median_df = pd.DataFrame(median_analysis)
     
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Fusionner les statistiques médianes avec les résultats combinés
+    # Merge median statistics with combined results
     if not median_df.empty:
-        # Créer un mapping des médianes par type et saison
+        # Create median mapping by type and season
         median_df_merge = median_df.rename(columns={
             'Type_Recette': 'type',
             'Saison': 'season',
@@ -160,7 +160,7 @@ def analyze_top_reviews_by_type_season(merged_df, recipes_df, output_dir, top_n=
             'Nb_Recettes_Analysees': 'nb_recipes_in_top'
         })
         
-        # Ajouter les colonnes de statistiques au DataFrame combiné
+        # Add statistics columns to combined DataFrame
         combined_results = combined_results.merge(
             median_df_merge,
             on=['type', 'season'],
