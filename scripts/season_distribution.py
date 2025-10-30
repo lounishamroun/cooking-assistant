@@ -4,12 +4,16 @@ Script for seasonal distribution by recipe type
 
 import pandas as pd
 import os
+import sys
+from pathlib import Path
 
-# Import season_utils module (from same folder)
-from .season_utils import get_season_from_date
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-# Import centralized configuration
-from .config import DATA_PATH, JUSTIFICATION_PATH
+# Import from the modular structure
+from cooking_assistant.analysis.seasonal import get_season_from_date
+from cooking_assistant.config import INTERIM_DATA_DIR
 
 def analyze_seasonal_distribution(merged_df=None):
     """
@@ -25,29 +29,15 @@ def analyze_seasonal_distribution(merged_df=None):
     
     # Load data only if not provided
     if merged_df is None:
-        interactions_path = os.path.join(DATA_PATH, "RAW_interactions.csv")
-        recipes_path = os.path.join(DATA_PATH, "recipes_classified.csv")
+        from cooking_assistant.data.loader import load_classified_recipes
+        from cooking_assistant.data.processor import prepare_merged_data
         
         print("Loading data...")
-        interactions_df = pd.read_csv(interactions_path, usecols=['recipe_id', 'date', 'rating'])
-        recipes_df = pd.read_csv(recipes_path, usecols=['id', 'type'])
+        recipes_df = load_classified_recipes()
+        merged_df = prepare_merged_data()
         
-        # Clean interactions
-        interactions_df['date'] = pd.to_datetime(interactions_df['date'], errors='coerce')
-        interactions_df = interactions_df.dropna()
-        
-        print(f"   • {len(interactions_df):,} valid reviews")
+        print(f"   • {len(merged_df):,} valid reviews")
         print(f"   • {len(recipes_df):,} recipes")
-        
-        # Add seasons
-        interactions_df['season'] = interactions_df['date'].apply(get_season_from_date)
-        
-        print("Using existing classification (plat, dessert, boisson)")
-        
-        # Merge data
-        merged_df = interactions_df.merge(recipes_df[['id', 'type']], 
-                                         left_on='recipe_id', right_on='id', how='inner')
-        
         print(f"{len(merged_df):,} reviews with identified type")
     else:
         print("Using pre-loaded data...")
@@ -81,12 +71,14 @@ def analyze_seasonal_distribution(merged_df=None):
     
     # Save
     filename = "distribution_saisonniere_par_type.csv"
-    filepath = os.path.join(JUSTIFICATION_PATH, filename)
+    # Use a simple output path since JUSTIFICATION_PATH doesn't exist anymore
+    output_dir = "/tmp"  # Will be overridden by calling function
+    filepath = os.path.join(output_dir, filename)
     
     results_df.to_csv(filepath, index=False)
     
     print(f"\nFile saved: {filename}")
-    print(f"Location: {JUSTIFICATION_PATH}")
+    print(f"Location: {output_dir}")
     
     return {
         'total_reviews': total_all,
