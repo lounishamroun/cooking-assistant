@@ -20,9 +20,10 @@ import os
 from tqdm import tqdm
 import time
 
+# Import configuration
+from cooking_assistant.config import RAW_DATA_DIR, INTERIM_DATA_DIR
 
-
-RAW_DIR = Path("data/raw")  # define BEFORE using it below
+RAW_DIR = RAW_DATA_DIR  # Use centralized configuration
 
 def latest_csv_with_prefix(prefix: str, directory: Path = RAW_DIR) -> Path:
     candidates = sorted(directory.glob(f"{prefix}_*.csv"))
@@ -538,8 +539,9 @@ df['conf_%'] = np.round(final_confs, 1)
 # III - Results export on desired features
 
 recipes_classified = df[['id', 'name', 'type', 'submitted']].copy()
-recipes_classified.to_csv('data/interim/recipes_classified.csv', index=False)
-print(f"Exported {len(recipes_classified)} recipes to data/interim/recipes_classified.csv")
+output_file = INTERIM_DATA_DIR / 'recipes_classified.csv'
+recipes_classified.to_csv(output_file, index=False)
+print(f"Exported {len(recipes_classified)} recipes to {output_file}")
 print("\nFirst 5 rows of the exported data:")
 print(recipes_classified.head())
 

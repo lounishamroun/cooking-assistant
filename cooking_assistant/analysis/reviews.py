@@ -1,10 +1,8 @@
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                ANALYSE DES TOP RECETTES PAR NOMBRE D'AVIS                    ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+TOP RECIPES ANALYSIS BY NUMBER OF REVIEWS
 
-Module pour analyser les recettes les plus commentées par type et saison.
-Basé sur scripts/top_reviews_analyzer.py
+Module to analyze most reviewed recipes by type and season.
+Based on scripts/top_reviews_analyzer.py
 """
 
 import pandas as pd
@@ -23,67 +21,67 @@ def analyze_top_reviews_by_type_season(
     verbose: bool = True
 ) -> Dict:
     """
-    Analyse les top N recettes par nombre d'avis pour chaque type et saison.
-    Génère des fichiers CSV pour l'analyse de justification des paramètres.
+    Analyzes top N recipes by number of reviews for each type and season.
+    Generates CSV files for parameter justification analysis.
     
     Args:
-        merged_df: DataFrame fusionné avec interactions et types de recettes
-        recipes_df: DataFrame avec les informations des recettes
-        output_dir: Répertoire pour sauvegarder les CSV
-        top_n: Nombre de top recettes à extraire (défaut: 100)
-        verbose: Afficher les informations de progression
+        merged_df: Merged DataFrame with interactions and recipe types
+        recipes_df: DataFrame with recipe information
+        output_dir: Directory to save CSV files
+        top_n: Number of top recipes to extract (default: 100)
+        verbose: Display progress information
         
     Returns:
-        Dictionnaire avec les résultats organisés par type et saison
+        Dictionary with results organized by type and season
     """
     if verbose:
         print(f"\n{'=' * 80}")
-        print(f"ANALYSE DES TOP {top_n} RECETTES PAR NOMBRE D'AVIS")
+        print(f"ANALYZING TOP {top_n} RECIPES BY NUMBER OF REVIEWS")
         print(f"{'=' * 80}")
     
-    # Créer le répertoire de sortie
+    # Create output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # Stockage des résultats
+    # Store results
     all_results = []
     results_by_type_season = {}
     
-    # Analyser chaque combinaison type × saison
+    # Analyze each type × season combination
     for recipe_type in RECIPE_TYPES:
         if verbose:
-            print(f"\nAnalyse de {recipe_type.upper()}...")
+            print(f"\nAnalyzing {recipe_type.upper()}...")
         
-        # Filtrer par type de recette
+        # Filter by recipe type
         type_df = merged_df[merged_df['type'] == recipe_type].copy()
         
         results_by_type_season[recipe_type] = {}
         
         for season in SEASONS:
-            # Filtrer par saison
+            # Filter by season
             season_df = type_df[type_df['season'] == season].copy()
             
             if len(season_df) == 0:
                 if verbose:
-                    print(f"   {season:10s} : Aucune donnée")
+                    print(f"   {season:10s} : No data")
                 continue
             
-            # Compter les avis par recette (tous les avis y compris rating=0)
+            # Count reviews per recipe (all reviews including rating=0)
             total_reviews = season_df.groupby('recipe_id').size().reset_index(name='total_reviews')
             
-            # Compter seulement les notes valides (rating > 0)
+            # Count only valid ratings (rating > 0)
             valid_ratings = season_df[season_df['rating'] > 0].groupby('recipe_id').agg({
                 'rating': ['count', 'mean']
             }).reset_index()
             valid_ratings.columns = ['recipe_id', 'valid_reviews', 'avg_valid_rating']
             
-            # Fusionner avec les notes valides
+            # Merge with valid ratings
             review_stats = total_reviews.merge(valid_ratings, on='recipe_id', how='left')
             
-            # Remplir les valeurs manquantes
+            # Fill missing values
             review_stats['valid_reviews'] = review_stats['valid_reviews'].fillna(0)
             review_stats['avg_valid_rating'] = review_stats['avg_valid_rating'].fillna(0)
             
-            # Ajouter les noms de recettes
+            # Add recipe names
             review_stats = review_stats.merge(
                 recipes_df[['id', 'name']],
                 left_on='recipe_id',
@@ -91,30 +89,30 @@ def analyze_top_reviews_by_type_season(
                 how='left'
             ).drop(columns=['id'])
             
-            # Ajouter les métadonnées
+            # Add metadata
             review_stats['type'] = recipe_type
             review_stats['season'] = season
             
-            # Trier par total d'avis et prendre le top N
+            # Sort by total reviews and take top N
             top_recipes = review_stats.sort_values('total_reviews', ascending=False).head(top_n)
             
-            # Stocker les résultats
+            # Store results
             results_by_type_season[recipe_type][season] = top_recipes
             all_results.append(top_recipes)
             
             if verbose:
-                print(f"   {season:10s} : {len(top_recipes)} recettes extraites")
-                print(f"                 Max avis : {top_recipes['total_reviews'].max()}")
-                print(f"                 Min avis : {top_recipes['total_reviews'].min()}")
-                print(f"                 Note moy : {top_recipes['avg_valid_rating'].mean():.3f}")
+                print(f"   {season:10s} : {len(top_recipes)} recipes extracted")
+                print(f"                 Max reviews : {top_recipes['total_reviews'].max()}")
+                print(f"                 Min reviews : {top_recipes['total_reviews'].min()}")
+                print(f"                 Avg rating  : {top_recipes['avg_valid_rating'].mean():.3f}")
     
-    # Combiner tous les résultats
+    # Combine all results
     combined_results = pd.concat(all_results, ignore_index=True)
     
-    # Analyse des médianes
+    # Median analysis
     if verbose:
         print(f"\n{'=' * 80}")
-        print(f"ANALYSE DES MÉDIANES (TOP {top_n})")
+        print(f"MEDIAN ANALYSIS (TOP {top_n})")
         print(f"{'=' * 80}")
     
     median_analysis = []
@@ -144,15 +142,15 @@ def analyze_top_reviews_by_type_season(
                 })
                 
                 if verbose:
-                    print(f"   {season:10s} : {median_reviews:6.0f} avis (médiane)")
+                    print(f"   {season:10s} : {median_reviews:6.0f} reviews (median)")
             else:
                 if verbose:
-                    print(f"   {season:10s} : Aucune donnée")
+                    print(f"   {season:10s} : No data")
     
-    # Créer le DataFrame des médianes
+    # Create median DataFrame
     median_df = pd.DataFrame(median_analysis) if median_analysis else pd.DataFrame()
     
-    # Fusionner les statistiques médianes avec les résultats combinés
+    # Merge median statistics with combined results
     if not median_df.empty:
         median_df_merge = median_df.rename(columns={
             'Type_Recette': 'type',
@@ -170,20 +168,20 @@ def analyze_top_reviews_by_type_season(
         )
         
         if verbose:
-            print("\nStatistiques médianes ajoutées au fichier combiné")
+            print("\nMedian statistics added to combined file")
     
-    # Générer le timestamp pour le nom de fichier
+    # Generate timestamp for filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     combined_filename = f"top_{top_n}_reviews_by_type_season_{timestamp}.csv"
     combined_filepath = os.path.join(output_dir, combined_filename)
     
-    # Réorganiser les colonnes pour meilleure lisibilité
+    # Reorganize columns for better readability
     column_order = [
         'season', 'type', 'recipe_id', 'name', 'total_reviews', 'valid_reviews',
         'median_reviews_type_season'
     ]
     
-    # S'assurer que toutes les colonnes existent
+    # Ensure all columns exist
     available_columns = [col for col in column_order if col in combined_results.columns]
     combined_results = combined_results[available_columns]
     
@@ -191,9 +189,9 @@ def analyze_top_reviews_by_type_season(
     
     if verbose:
         print(f"\n{'=' * 80}")
-        print(f"Résultats sauvegardés : {combined_filename}")
-        print(f"   Emplacement : {output_dir}")
-        print(f"   Total lignes : {len(combined_results):,}")
+        print(f"Results saved: {combined_filename}")
+        print(f"   Location: {output_dir}")
+        print(f"   Total rows: {len(combined_results):,}")
         print(f"{'=' * 80}\n")
     
     return {
@@ -207,5 +205,5 @@ def analyze_top_reviews_by_type_season(
 
 
 if __name__ == "__main__":
-    print("Module d'analyse des tops par nombre d'avis")
-    print("Utilisez ce module via les scripts ou l'API")
+    print("Top reviews analysis module")
+    print("Use this module via scripts or API")

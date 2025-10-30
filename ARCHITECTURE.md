@@ -1,96 +1,165 @@
-# 🍳 Cooking Assistant - Architecture Modulaire
+# Cooking Assistant - Modular Architecture
 
-## 📋 Vue d'ensemble
+## Overview
 
-Projet de classification et d'analyse de recettes par type (plat, dessert, boisson) et par saison.
+Project in two steps :
+- Step 1 : Classification of all the dataset recipes by types (dish,dessert,beverages) 
+  Step 2 : Top 20 of best recipes by type (plat, dessert, boisson) and by season.
 
-## 🏗️ Architecture du projet
+## Project Architecture
 
 ```
 cooking-assistant/
 │
-├── cooking_assistant/              # 📦 PACKAGE PRINCIPAL
+├── cooking_assistant/              # MAIN PACKAGE
 │   ├── __init__.py
-│   ├── config.py                   # ⚙️  Configuration centrale
+│   ├── config.py                   # Central configuration
 │   │
-│   ├── data/                       # 📂 Gestion des données
+│   ├── data/                       # Data management
 │   │   ├── __init__.py
-│   │   ├── downloader.py           # Téléchargement depuis Kaggle
-│   │   ├── loader.py               # Chargement des CSV
-│   │   └── processor.py            # Fusion et prétraitement
+│   │   ├── downloader.py           # Download from Kaggle
+│   │   ├── loader.py               # CSV loading
+│   │   └── processor.py            # Merging and preprocessing
 │   │
-│   ├── classification/             # 🏷️ Classification des recettes
-│   │   └── __init__.py             # (À implémenter)
+│   ├── classification/             # Recipe classification
+│   │   └── __init__.py             # (To be implemented)
 │   │
-│   ├── analysis/                   # 📊 Analyse et ranking
+│   ├── analysis/                   # Analysis and ranking
 │   │   ├── __init__.py
-│   │   ├── seasonal.py             # Utilitaires saisonniers
-│   │   ├── scoring.py              # Calcul scores bayésiens
-│   │   └── reviews.py              # Analyse des tops par avis
+│   │   ├── seasonal.py             # Seasonal utilities
+│   │   ├── scoring.py              # Bayesian score calculation
+│   │   └── reviews.py              # Top reviews analysis
 │   │
-│   └── utils/                      # 🛠️ Utilitaires
-│       └── __init__.py
+│   └── utils/                      # Utilities
+│       ├── __init__.py
+│       └── results.py              # Results management
 │
-├── scripts/                        # 🚀 Scripts d'automatisation
-│   ├── 01_classifier_generator.py  # Génère recettes classifiées
-│   ├── config.py                   # (Ancien, sera déprécié)
-│   ├── data_loader_preparation.py  # (Ancien, sera déprécié)
-│   ├── season_utils.py             # (Ancien, sera déprécié)
-│   ├── score_calculator.py         # (Ancien, sera déprécié)
-│   └── top_reviews_analyzer.py     # (Ancien, sera déprécié)
+├── app/                            # Applications
+│   ├── main.py                     # Main pipeline entry point
+│   └── streamlit/                  # Streamlit web interface
+│       └── streamlit_app.py
 │
-├── data/                           # 💾 Données
-│   ├── raw/                        # Données brutes (Kaggle)
-│   ├── interim/                    # Données intermédiaires
-│   │   └── recipes_classified.csv  # Recettes avec colonne 'type'
-│   └── processed/                  # Données finales
+├── scripts/                        # Automation scripts
+│   ├── 01_classifier_generator.py  # Generates classified recipes
+│   ├── top_recipe_rankings.py      # Calculate top rankings
+│   ├── top_reviews_analyzer.py     # Analyze top reviews
+│   └── season_distribution.py      # Season distribution analysis
 │
-├── resultats/                      # 📈 Résultats des rankings
-├── reports/                        # 📊 Rapports et visualisations
-├── docs/                           # 📚 Documentation
-└── pyproject.toml                  # ⚙️  Configuration Poetry
+├── analysis_parameter_justification/ # Parameter analysis
+│   ├── bayesian_parameters_docs_justification.md
+│   ├── generate_csv_to_analyse_for_parameter_justification.py
+│   └── results_to_analyse/         # Analysis results
+│
+├── data/                           # Data directories
+│   ├── raw/                        # Raw data (Kaggle)
+│   ├── interim/                    # Intermediate data
+│   │   └── recipes_classified.csv  # Recipes with 'type' column
+│   └── processed/                  # Final processed data
+│       ├── top20_plat_for_each_season.csv
+│       ├── top20_dessert_for_each_season.csv
+│       └── top20_boisson_for_each_season.csv
+│
+├── docs/                           # Documentation
+├── reports/                        # Reports and visualizations
+├── logs/                           # Log files
+├── models/                         # ML models and artifacts
+├── utils/                          # Legacy utilities
+│
+├── .gitignore.txt                  # Git ignore patterns
+├── pyproject.toml                  # Poetry project configuration
+├── poetry.lock                     # Poetry dependency lock file
+├── docker-compose.yml              # Docker compose configuration
+├── Dockerfile                      # Docker container configuration
+├── README.md                       # Project documentation
+└── ARCHITECTURE.md                 # This file
+```
+│
+├── data/                           # Data directories
+│   ├── raw/                        # Raw data (Kaggle)
+│   ├── interim/                    # Intermediate data
+│   │   └── recipes_classified.csv  # Recipes with 'type' column
+│   └── processed/                  # Final processed data
+│       ├── top20_plat_for_each_season.csv
+│       ├── top20_dessert_for_each_season.csv
+│       └── top20_boisson_for_each_season.csv
+│
+├── docs/                           # Documentation
+├── reports/                        # Reports and visualizations
+├── logs/                           # Log files
+└── pyproject.toml                  # Poetry configuration
 ```
 
-## 🚀 Installation
+## Installation
 
+### Prerequisites
+- Python 3.8+
+- Poetry (recommended) or pip
+
+### With Poetry (Recommended)
 ```bash
-# Installer les dépendances avec Poetry
+# Install Poetry if not already installed
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Install project dependencies
 poetry install
 
-# Ou avec pip
+# Activate virtual environment
+poetry shell
+```
+
+### With pip
+```bash
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
 pip install -e .
 ```
 
-## 📖 Utilisation
+### Dependencies Management
 
-### 1️⃣ Télécharger les données brutes
+The project uses Poetry for dependency management:
+- `pyproject.toml`: Project configuration and dependencies
+- `poetry.lock`: Locked versions for reproducible builds
+
+Key dependencies include:
+- pandas, numpy: Data manipulation
+- scikit-learn: Machine learning
+- matplotlib, seaborn: Visualization
+- streamlit: Web interface
+- kagglehub: Kaggle data download
+
+## Usage
+
+### 1. Download raw data
 
 ```python
 from cooking_assistant.data import download_raw_data
 
-# Télécharge depuis Kaggle si pas déjà fait
+# Download from Kaggle if not already done
 download_raw_data()
 ```
 
-### 2️⃣ Charger et préparer les données
+### 2. Load and prepare data
 
 ```python
 from cooking_assistant.data import load_data, prepare_merged_data
 
-# Charger recettes et interactions
+# Load recipes and interactions
 recipes_df, interactions_df = load_data()
 
-# Fusionner et ajouter les saisons
+# Merge and add seasons
 merged_df = prepare_merged_data(recipes_df, interactions_df)
 ```
 
-### 3️⃣ Calculer les top 20 par type et saison
+### 3. Calculate top 20 by type and season
 
 ```python
 from cooking_assistant.analysis import calculate_top_n_by_type
 from cooking_assistant.config import BAYESIAN_PARAMS
 
-# Calculer pour les plats
+# Calculate for main dishes
 tops = calculate_top_n_by_type(
     merged_df=merged_df,
     recipes_df=recipes_df,
@@ -98,16 +167,16 @@ tops = calculate_top_n_by_type(
     params=BAYESIAN_PARAMS['plat']
 )
 
-# Accéder au top 20 du printemps
+# Access spring top 20
 spring_top20 = tops['Spring']
 ```
 
-### 4️⃣ Analyser les tops par nombre d'avis
+### 4. Analyze tops by number of reviews
 
 ```python
 from cooking_assistant.analysis import analyze_top_reviews_by_type_season
 
-# Analyser les 100 recettes les plus commentées
+# Analyze the 100 most reviewed recipes
 results = analyze_top_reviews_by_type_season(
     merged_df=merged_df,
     recipes_df=recipes_df,
@@ -115,36 +184,79 @@ results = analyze_top_reviews_by_type_season(
 )
 ```
 
-## 🔧 Configuration
+## Configuration Files
 
-Toute la configuration est centralisée dans `cooking_assistant/config.py` :
+### Project Configuration
+- **`pyproject.toml`**: Poetry project configuration
+  - Project metadata (name, version, description)
+  - Dependencies specification
+  - Build system configuration
+  - Development dependencies
 
-- **Chemins** : `RAW_DATA_DIR`, `PROCESSED_DATA_DIR`, `RESULTS_DIR`
-- **Types** : `RECIPE_TYPES = ["plat", "dessert", "boisson"]`
-- **Saisons** : `SEASONS = ["Spring", "Summer", "Fall", "Winter"]`
-- **Paramètres bayésiens** : `BAYESIAN_PARAMS`
+- **`poetry.lock`**: Dependency lock file
+  - Exact versions of all dependencies
+  - Ensures reproducible builds across environments
+  - Should be committed to version control
 
-## 📊 Paramètres Bayésiens
+### Development Configuration
+- **`.gitignore.txt`**: Git ignore patterns
+  - Excludes temporary files, logs, data files
+  - Protects sensitive configuration
+  - Prevents large data files from being committed
 
-Les paramètres sont justifiés dans `docs/bayesian_parameters_docs_justification/`
+- **`docker-compose.yml`** & **`Dockerfile`**: Container configuration
+  - Dockerized environment setup
+  - Consistent deployment across platforms
+
+## Configuration
+
+All configuration is centralized in `cooking_assistant/config.py`:
+
+- **Paths**: `RAW_DATA_DIR`, `PROCESSED_DATA_DIR`, `RESULTS_DIR`
+- **Types**: `RECIPE_TYPES = ["plat", "dessert", "boisson"]`
+- **Seasons**: `SEASONS = ["Spring", "Summer", "Fall", "Winter"]`
+- **Bayesian parameters**: `BAYESIAN_PARAMS`
+
+## Bayesian Parameters
+
+Parameters are justified in `analysis_parameter_justification/bayesian_parameters_docs_justification.md`
 
 | Type     | kb  | kpop | gamma | Description                    |
 |----------|-----|------|-------|--------------------------------|
-| Plat     | 65  | 45.0 | 1.2   | Équilibre qualité/popularité   |
-| Dessert  | 60  | 40.0 | 1.2   | Plus d'avis en général         |
-| Boisson  | 20  | 4.0  | 0.7   | Priorité à la qualité          |
+| Plat     | 65  | 47.0 | 1.2   | Quality/popularity balance     |
+| Dessert  | 60  | 40.0 | 1.2   | More reviews in general        |
+| Boisson  | 20  | 4.0  | 0.7   | Quality priority               |
 
-## 🔄 Migration depuis l'ancienne architecture
+## Main Pipeline
 
-Les anciens scripts dans `scripts/` utilisent maintenant le package `cooking_assistant` :
+The complete pipeline is available via `app/main.py`:
 
-**Avant** :
+```bash
+# Run the complete pipeline
+python app/main.py
+```
+
+This script executes:
+1. Data download from Kaggle
+2. Recipe classification by ML
+3. Bayesian score calculation and top 20 generation
+
+Final results are saved in `data/processed/`:
+- `top20_plat_for_each_season.csv` (80 recipes: 20×4 seasons)
+- `top20_dessert_for_each_season.csv` (80 recipes: 20×4 seasons)
+- `top20_boisson_for_each_season.csv` (80 recipes: 20×4 seasons)
+
+## Migration from old architecture
+
+Old scripts in `scripts/` now use the `cooking_assistant` package:
+
+**Before**:
 ```python
 from scripts.config import PARAMS_PLATS
 from scripts.data_loader_preparation import load_data
 ```
 
-**Après** :
+**After**:
 ```python
 from cooking_assistant.config import BAYESIAN_PARAMS
 from cooking_assistant.data import load_data
@@ -152,68 +264,70 @@ from cooking_assistant.data import load_data
 params_plats = BAYESIAN_PARAMS['plat']
 ```
 
-## 🧪 Tests
+## Testing
 
 ```bash
-# Tester le chargement des données
+# Test data loading
 python -m cooking_assistant.data.loader
 
-# Tester le calcul des saisons
+# Test season calculation
 python -m cooking_assistant.analysis.seasonal
 ```
 
-## 📝 Scripts principaux
+## Main Scripts
 
-### Script 1 : Classification (01_classifier_generator.py)
+### Script 1: Classification (01_classifier_generator.py)
 
-**Ce script reste complexe et nécessite une refactorisation future.**
+**This script remains complex and requires future refactoring.**
 
-Génère `recipes_classified.csv` avec la colonne `type`.
+Generates `recipes_classified.csv` with the `type` column.
 
-### Scripts futurs (à créer avec les modules)
+### Script 2: Rankings calculation (top_recipe_rankings.py)
+
+Uses the modular architecture to calculate rankings:
 
 ```python
-# scripts/02_calculate_rankings.py
 from cooking_assistant.data import load_classified_recipes, load_interactions, prepare_merged_data
 from cooking_assistant.analysis import calculate_top_n_by_type
 from cooking_assistant.config import BAYESIAN_PARAMS, RECIPE_TYPES
 
 def main():
-    # Charger les données
+    # Load data
     recipes = load_classified_recipes()
     interactions = load_interactions()
     merged = prepare_merged_data(recipes, interactions)
     
-    # Calculer pour chaque type
+    # Calculate for each type
     for recipe_type in RECIPE_TYPES:
         tops = calculate_top_n_by_type(
             merged, recipes, recipe_type,
             BAYESIAN_PARAMS[recipe_type]
         )
-        # Sauvegarder les résultats...
+        # Save results...
 
 if __name__ == "__main__":
     main()
 ```
 
-## 🎯 Prochaines étapes
+## Data Flow
 
-1. ✅ Architecture modulaire créée
-2. ✅ Configuration centralisée
-3. ✅ Modules data, analysis créés
-4. ⏳ Refactoriser 01_classifier_generator.py
-5. ⏳ Créer scripts simplifiés utilisant les modules
-6. ⏳ Interface Streamlit
-7. ⏳ Tests unitaires
-8. ⏳ Documentation Sphinx
+```
+RAW_recipes.csv + RAW_interactions.csv
+            ↓
+    01_classifier_generator.py
+            ↓
+    recipes_classified.csv (data/interim/)
+            ↓
+    top_recipe_rankings.py
+            ↓
+    top20_*.csv files (data/processed/)
+```
 
-## 👥 Contributeurs
+## Contributors
 
 - Lounis Hamroun
 - Alexandre Donnat
 - Omar Fekih
 - Leo Ivars
 
-## 📄 Licence
 
-*À définir*

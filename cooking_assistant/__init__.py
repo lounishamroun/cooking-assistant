@@ -1,10 +1,10 @@
 """
-Cooking Assistant - Classification et analyse de recettes par type et saison.
+Cooking Assistant - Recipe classification and analysis by type and season.
 
-Ce package fournit des outils pour :
-- Télécharger et charger les données de recettes
-- Classifier les recettes (plat, dessert, boisson)
-- Analyser et créer des rankings par type et saison
+This package provides tools to:
+- Download and load recipe data
+- Classify recipes (main dish, dessert, beverage)
+- Analyze and create rankings by type and season
 """
 
 __version__ = "0.1.0"
