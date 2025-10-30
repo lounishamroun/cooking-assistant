@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""
+Script principal pour lancer l'analyse des paramètres bayésiens.
+Lance seasonal.py et top_reviews_analyzer.py et sauvegarde dans results_to_analyse.
+"""
+
+import os
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import analysis modules
+from scripts.season_distribution import analyze_seasonal_distribution
+from scripts.top_reviews_analyzer import analyze_top_reviews_by_type_season
+from cooking_assistant.data.loader import load_classified_recipes
+from cooking_assistant.data.processor import prepare_merged_data
+
+
+def main():
+    """
+    Lance les 2 analyses et sauvegarde dans results_to_analyse.
+    """
+    print("ANALYSE PARAMÈTRES BAYÉSIENS")
+    print("=" * 50)
+    
+    # Dossier de sortie
+    output_dir = "/home/omarf/projet_mangetamain/cooking-assistant/analysis/results_to_analyse"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    print(f"Sortie: {output_dir}")
+    
+    try:
+        # 1. Chargement des données
+        print("\n1. Chargement des données...")
+        recipes_df = load_classified_recipes()
+        
+        from cooking_assistant.data.loader import load_interactions
+        interactions_df = load_interactions()
+        
+        merged_df = prepare_merged_data(recipes_df, interactions_df)
+        print(f"   {len(recipes_df):,} recettes")
+        print(f"   {len(interactions_df):,} interactions")
+        print(f"   {len(merged_df):,} interactions fusionnées")
+        
+        # 2. Analyse saisonnière
+        print("\n2. Analyse distribution saisonnière...")
+        seasonal_results = analyze_seasonal_distribution(merged_df)
+        
+        # Copier le fichier dans results_to_analyse avec timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        seasonal_output = os.path.join(output_dir, f"distribution_saisonniere_par_type_{timestamp}.csv")
+        seasonal_results['dataframe'].to_csv(seasonal_output, index=False)
+        print(f"   Sauvegardé: distribution_saisonniere_par_type_{timestamp}.csv")
+        
+        # 3. Analyse top reviews
+        print("\n3. Analyse top reviews...")
+        top_reviews_results = analyze_top_reviews_by_type_season(
+            merged_df=merged_df,
+            recipes_df=recipes_df,
+            output_dir=output_dir,
+            top_n=100
+        )
+        print(f"   Sauvegardé: top_100_reviews_by_type_season_*.csv")
+        
+        # 4. Résumé
+        print("\nANALYSE TERMINÉE!")
+        print("=" * 50)
+        print("Fichiers générés:")
+        
+        csv_files = [f for f in os.listdir(output_dir) if f.endswith('.csv')]
+        for i, file in enumerate(csv_files, 1):
+            file_path = os.path.join(output_dir, file)
+            size = os.path.getsize(file_path)
+            print(f"{i}. {file} ({size:,} bytes)")
+        
+        return True
+        
+    except Exception as e:
+        print(f"\nErreur: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+if __name__ == "__main__":
+    success = main()
+    if success:
+        print("\nMission accomplie!")
+    else:
+        print("\nÉchec de l'analyse.")
+        sys.exit(1)

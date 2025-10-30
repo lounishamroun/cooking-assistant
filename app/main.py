@@ -1,181 +1,242 @@
+#!/usr/bin/env python3
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    RECIPE RECOMMENDATION SYSTEM                              ║
-║                    Based on Bayesian Q-Score                                 ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+COOKING ASSISTANT - PIPELINE COMPLET
 
-This main script orchestrates the recipe analysis process and generates
-the top 20 best recipes by type and season. it also adds a top 100 reviews analysis
-for parameter justification and a proportion analysis of seasonal distribution of reviews that helps
-to justify the parameters used in the recommendation system.
+Script principal qui exécute l'ensemble du pipeline pour obtenir les top 20 recettes
+par type et saison.
 
-METHODOLOGY:
-------------
-1. Bayesian Q-Score: Combines average rating with Bayesian regression
-   to prevent recipes with few reviews from having inflated scores.
-   
-2. Popularity Weight: Uses exponential function to favor
-   recipes that have been tested by more people.
-   
-3. Final Score: Multiplies Q-Score by popularity weight to obtain
-   a balanced score between quality and confidence.
+Pipeline complet :
+1. Téléchargement des données depuis Kaggle
+2. Classification des recettes par type (plat, dessert, boisson)  
+3. Calcul des scores bayésiens et génération des top 20
 
-FORMULAS:
----------
-- Q-Score = (valid_avg_rating * nb_valid_ratings + season_avg * kb) / (nb_valid_ratings + kb)
-- Pop_Weight = (1 - exp(-nb_season_reviews / kpop))^gamma
-- Final_Score = Q-Score * Pop_Weight
-
-valid_avg_rating: Average rating considering only ratings > 0
-nb_valid_ratings: Number of reviews with rating > 0
-season_avg: Average rating across all recipes in the season
-kb: Bayesian regression parameter (pseudo-reviews)
-nb_season_reviews: Total number of reviews for the recipe in the season
-kpop: Popularity threshold parameter
-gamma: Popularity amplification factor
-
-PARAMETERS BY TYPE:
--------------------
-- Main Dishes : kb=65,  kpop=45,  gamma=1.2
-- Desserts    : kb=60,  kpop=40,  gamma=1.2
-- Beverages   : kb=20,  kpop=4,   gamma=0.7
+Résultats finaux dans data/processed/ :
+- top20_plat_for_each_season.csv
+- top20_dessert_for_each_season.csv  
+- top20_boisson_for_each_season.csv
 """
 
-import os
 import sys
-import pandas as pd
+import time
+import subprocess
+from pathlib import Path
+from datetime import datetime
 
-# Add scripts folder to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
+# Ajouter le projet au path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-# Import local modules
-from scripts.config import (
-    DATA_PATH, RESULTS_PATH, JUSTIFICATION_PATH, SEASON_ORDER, TOP_N,
-    PARAMS_PLATS, PARAMS_DESSERTS, PARAMS_BOISSONS
-)
-from scripts.data_loader_preparation import load_data, prepare_data
-from scripts.score_calculator import calculate_top_n_by_type
-from scripts.results_handler import save_results, display_summary
-from scripts.season_distribution import analyze_seasonal_distribution
-from scripts.top_reviews_analyzer import analyze_top_reviews_by_type_season
+from cooking_assistant.data.downloader import main as download_data
+from scripts.top_recipe_rankings import main as calculate_rankings
+
+
+def print_header():
+    """Affiche l'en-tête du pipeline."""
+    print("COOKING ASSISTANT - PIPELINE COMPLET")
+    print(f"Démarrage : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print()
+
+
+def print_step(step_num, title, description=""):
+    """Affiche le titre d'une étape."""
+    print(f"\nÉTAPE {step_num} : {title}")
+    if description:
+        print(f"   {description}")
+    print()
+
+
+def run_classification_script():
+    """
+    Exécute le script de classification 01_classifier_generator.py
+    
+    Returns:
+        bool: True si succès, False si échec
+    """
+    try:
+        # Obtenir le chemin du script
+        script_path = project_root / "scripts" / "01_classifier_generator.py"
+        python_exe = project_root / ".venv" / "bin" / "python"
+        
+        # Exécuter le script de classification
+        result = subprocess.run([
+            str(python_exe), 
+            str(script_path)
+        ], 
+        cwd=str(project_root),
+        capture_output=True, 
+        text=True,
+        timeout=600  # 10 minutes max
+        )
+        
+        if result.returncode == 0:
+            print("Classification terminée avec succès")
+            return True
+        else:
+            print(f"Erreur dans la classification :")
+            print(f"   Code de sortie : {result.returncode}")
+            if result.stderr:
+                print(f"   Erreur : {result.stderr}")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        print("Timeout : La classification a pris trop de temps")
+        return False
+    except Exception as e:
+        print(f"Erreur lors de l'exécution de la classification : {e}")
+        return False
+
+
+def execute_step(step_func, step_name, *args, **kwargs):
+    """
+    Exécute une étape et mesure le temps d'exécution.
+    
+    Args:
+        step_func: Fonction à exécuter
+        step_name: Nom de l'étape pour l'affichage
+        *args, **kwargs: Arguments pour la fonction
+        
+    Returns:
+        bool: True si succès, False si échec
+    """
+    start_time = time.time()
+    
+    try:
+        print(f"\nLancement de {step_name}...")
+        result = step_func(*args, **kwargs)
+        
+        elapsed = time.time() - start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        
+        print(f"{step_name} terminé avec succès !")
+        print(f"Temps d'exécution : {minutes}m {seconds}s")
+        
+        return True
+        
+    except Exception as e:
+        elapsed = time.time() - start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        
+        print(f"Erreur dans {step_name} :")
+        print(f"{str(e)}")
+        print(f"Temps avant échec : {minutes}m {seconds}s")
+        
+        return False
+
+
+def execute_script_step(script_func, step_name):
+    """
+    Exécute une étape script et mesure le temps d'exécution.
+    """
+    start_time = time.time()
+    
+    try:
+        print(f"\nLancement de {step_name}...")
+        success = script_func()
+        
+        elapsed = time.time() - start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        
+        if success:
+            print(f"{step_name} terminé avec succès !")
+        else:
+            print(f"{step_name} a échoué !")
+            
+        print(f"Temps d'exécution : {minutes}m {seconds}s")
+        
+        return success
+        
+    except Exception as e:
+        elapsed = time.time() - start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        
+        print(f"Erreur dans {step_name} :")
+        print(f"   {str(e)}")
+        print(f"Temps avant échec : {minutes}m {seconds}s")
+        
+        return False
 
 
 def main():
     """
-    Main function that orchestrates the entire process.
+    Pipeline principal pour générer les top 20 recettes.
     
-    PROCESS:
-    --------
-    1. Generate parameter justification analysis:
-       - Seasonal distribution by recipe type
-       - Top 100 reviews analysis for parameter justification
-    2. Load data (recipes + interactions)
-    3. Prepare data (merge + add season)
-    4. Calculate top 20 for each recipe type:
-       - Main Dishes
-       - Desserts
-       - Beverages
-    5. Save results to CSV
-    6. Display summary
+    Returns:
+        int: Code de sortie (0 = succès, 1 = échec)
+    """
+    print_header()
     
-    OUTPUT FILES:
-    -------------
-    Main Analysis (in results/):
-    - top_20_plats_par_saison.csv
-    - top_20_desserts_par_saison.csv  
-    - top_20_boissons_par_saison.csv
+    total_start = time.time()
     
-    Parameter Justification (in bayesian_parameters_justification/):
-    - distribution_saisonniere_par_type.csv
-    - top_100_reviews_by_type_season.csv (combined only)
-    """ 
     try:
-        # STEP 1: Generate parameter justification analysis
-        print("\n[PARAMETER JUSTIFICATION ANALYSIS]")
-        print("="*70)
+        # ══════════════════════════════════════════════════════════════════
+        # ÉTAPE 1 : Téléchargement des données depuis Kaggle
+        # ══════════════════════════════════════════════════════════════════
+        print_step(1, "TÉLÉCHARGEMENT DES DONNÉES", 
+                   "Récupération des datasets depuis Kaggle")
         
-        # Load and prepare data once
-        print("Loading and preparing data...")
-        recipes_df, interactions_df = load_data(DATA_PATH)
-        merged_df = prepare_data(recipes_df, interactions_df)
+        if not execute_step(download_data, "Téléchargement Kaggle"):
+            return 1
         
-        # 1a. Seasonal distribution analysis (reuse loaded data)
-        print("\nAnalyzing seasonal distribution by recipe type...")
-        seasonal_results = analyze_seasonal_distribution(merged_df)
-        print(f"   > Seasonal distribution analyzed: {seasonal_results['total_reviews']:,} reviews")
+        # ══════════════════════════════════════════════════════════════════
+        # ÉTAPE 2 : Classification des recettes par type
+        # ══════════════════════════════════════════════════════════════════
+        print_step(2, "CLASSIFICATION DES RECETTES", 
+                   "Analyse ML pour déterminer le type (plat, dessert, boisson)")
         
-        # 1b. Top 100 reviews analysis (reuse loaded data)
-        print("\nAnalyzing top 100 recipes by review count...")
-        reviews_analysis = analyze_top_reviews_by_type_season(
-            merged_df, recipes_df, JUSTIFICATION_PATH, top_n=100
-        )
-        print("   > Top 100 reviews analysis completed")
+        if not execute_script_step(run_classification_script, "Classification ML"):
+            return 1
         
-        print(f"\nParameter justification files saved in: {JUSTIFICATION_PATH}")
+        # ══════════════════════════════════════════════════════════════════
+        # ÉTAPE 3 : Calcul des top 20 par type et saison
+        # ══════════════════════════════════════════════════════════════════
+        print_step(3, "CALCUL DES TOP 20 FINAUX", 
+                   "Scores bayésiens et génération des CSV finaux")
         
-        # STEP 2-3: Main analysis pipeline (reuse already loaded data)
-        print("\n[MAIN ANALYSIS PIPELINE]")
-        print("="*50)
+        if not execute_step(calculate_rankings, "Calcul des rankings"):
+            return 1
         
-        # STEP 4: Calculate top 20 for each type
-        results = {}
+        # ══════════════════════════════════════════════════════════════════
+        # RÉSUMÉ FINAL
+        # ══════════════════════════════════════════════════════════════════
+        total_elapsed = time.time() - total_start
+        total_minutes = int(total_elapsed // 60)
+        total_seconds = int(total_elapsed % 60)
         
-        # MAIN DISHES
-        results['plat'] = calculate_top_n_by_type(
-            merged_df, recipes_df, 'plat', PARAMS_PLATS, SEASON_ORDER, TOP_N
-        )
+        print("\n" + "=" * 80)
+        print("PIPELINE COMPLET TERMINÉ AVEC SUCCÈS !")
+        print("=" * 80)
         
-        # DESSERTS
-        results['dessert'] = calculate_top_n_by_type(
-            merged_df, recipes_df, 'dessert', PARAMS_DESSERTS, SEASON_ORDER, TOP_N
-        )
+        print(f"\nRÉSULTATS GÉNÉRÉS :")
+        print(f"Dossier : data/processed/")
+        print(f"Fichiers :")
+        print(f"   • top20_plat_for_each_season.csv      (80 recettes)")
+        print(f"   • top20_dessert_for_each_season.csv   (80 recettes)")  
+        print(f"   • top20_boisson_for_each_season.csv   (80 recettes)")
+        print(f"Total : 240 recettes analysées")
         
-        # BEVERAGES
-        results['boisson'] = calculate_top_n_by_type(
-            merged_df, recipes_df, 'boisson', PARAMS_BOISSONS, SEASON_ORDER, TOP_N
-        )
+        print(f"\nTEMPS TOTAL : {total_minutes}m {total_seconds}s")
+        print(f"Fin : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        # STEP 5: Save results
-        print("\n[SAVING RESULTS]")       
-        saved_files = {}
-        for recipe_type, top_n_dict in results.items():
-            saved_files[recipe_type] = save_results(top_n_dict, recipe_type, RESULTS_PATH)
+        print(f"\nVos données sont prêtes pour l'analyse !")
+        print("=" * 80)
         
-        # STEP 6: Display summaries
-        for recipe_type, top_n_dict in results.items():
-            display_summary(top_n_dict, recipe_type, SEASON_ORDER)
+        return 0
         
-        # STEP 7: End message
-        print("\n" + "="*70)
-        print("[PROCESSING COMPLETED SUCCESSFULLY]")
-        print("="*70)
-        print("\n[MAIN ANALYSIS FILES]:")
-        for recipe_type, filepath in saved_files.items():
-            print(f"   • {recipe_type:10s}: {os.path.basename(filepath)}")
-
-        print(f"\nMain results directory: {RESULTS_PATH}")
-        print(f"Parameter justification: {JUSTIFICATION_PATH}")
-        
-        print("\n[SUMMARY]:")
-        print(f"   • Seasonal distribution: {seasonal_results['total_reviews']:,} reviews analyzed")
-        print("   • Top 20 recipes calculated for 3 types × 4 seasons = 12 analyses")
-        print("   • Top 100 reviews analysis generated for parameter justification")
-        print("   • Parameter distribution analysis completed")
-        print(f"   • Combined justification file: {os.path.basename(reviews_analysis['files_created']['combined'])}")
-        print(f"   • Seasonal distribution file: {os.path.basename(seasonal_results['filepath'])}")
-        
-    except (FileNotFoundError, pd.errors.EmptyDataError, KeyError, ValueError) as e:
-        print(f"\n ERROR: {str(e)}")
-        import traceback
-        traceback.print_exc()
+    except KeyboardInterrupt:
+        print(f"\n\nPipeline interrompu par l'utilisateur")
         return 1
-    
-    return 0
+        
+    except Exception as e:
+        print(f"\n\nErreur fatale dans le pipeline :")
+        print(f"   {str(e)}")
+        return 1
 
 
 if __name__ == "__main__":
-    """
-    Script entry point. Executes the main function and returns the exit code.
-    """
+    """Point d'entrée du script."""
     exit_code = main()
-    exit(exit_code)
+    sys.exit(exit_code)

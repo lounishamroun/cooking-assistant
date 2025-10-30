@@ -123,7 +123,7 @@ def calculate_top_n_by_type(
     season_means = {}
     
     if verbose:
-        print(f"\n📊 Moyennes saisonnières de base :")
+        print(f"\nMoyennes saisonnières de base :")
     
     for season in season_order:
         season_ratings = type_df[
@@ -187,7 +187,7 @@ def calculate_top_n_by_type(
     
     if verbose:
         print(f"\n{'=' * 80}")
-        print(f"✅ Calcul terminé pour {recipe_type}")
+        print(f"Calcul terminé pour {recipe_type}")
         print(f"{'=' * 80}\n")
     
     return top_n_by_season

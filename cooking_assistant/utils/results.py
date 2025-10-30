@@ -33,7 +33,7 @@ def save_top_results(
     Returns:
         Path du fichier sauvegardé
     """
-    print(f"\n💾 Sauvegarde des résultats - {recipe_type}...")
+    print(f"\nSauvegarde des résultats - {recipe_type}...")
     
     # Combiner tous les tops N en un seul DataFrame
     all_top_n = pd.concat(top_n_dict.values(), ignore_index=True)
@@ -142,6 +142,107 @@ def save_all_type_results(
             top_n
         )
         saved_files[recipe_type] = filepath
+    
+    return saved_files
+
+
+def save_combined_results_by_type(
+    all_results: Dict[str, Dict[str, pd.DataFrame]],
+    results_path: Path = None
+) -> Dict[str, Path]:
+    """
+    Sauvegarde 3 fichiers CSV finaux (un par type) avec toutes les saisons combinées.
+    
+    Args:
+        all_results: Dict {recipe_type: {season: DataFrame}}
+        results_path: Chemin de sortie (par défaut: PROCESSED_DATA_DIR)
+        
+    Returns:
+        Dict {recipe_type: filepath} des fichiers sauvegardés
+        
+        Exemple de sortie:
+        data/processed/
+        ├── top20_plat_for_each_season.csv      (80 recettes: 20×4 saisons)
+        ├── top20_dessert_for_each_season.csv   (80 recettes: 20×4 saisons)  
+        └── top20_boisson_for_each_season.csv   (80 recettes: 20×4 saisons)
+    """
+    from ..config import PROCESSED_DATA_DIR, SEASONS, TOP_N
+    
+    if results_path is None:
+        results_path = PROCESSED_DATA_DIR
+    
+    results_path.mkdir(parents=True, exist_ok=True)
+    saved_files = {}
+    
+    print(f"\nSauvegarde des fichiers CSV finaux dans {results_path}")
+    print("=" * 80)
+    
+    for recipe_type, seasons_data in all_results.items():
+        print(f"\n🏷️  Traitement : {recipe_type.upper()}")
+        
+        combined_data = []
+        
+        # Combiner toutes les saisons pour ce type
+        for season in SEASONS:
+            if season in seasons_data and not seasons_data[season].empty:
+                season_df = seasons_data[season].copy()
+                season_df['season'] = season
+                season_df['rank_in_season'] = range(1, len(season_df) + 1)
+                combined_data.append(season_df)
+                print(f"   ✓ {season:10s} : {len(season_df)} recettes")
+        
+        if combined_data:
+            # Combiner tous les DataFrames
+            final_df = pd.concat(combined_data, ignore_index=True)
+            
+            # Sélectionner et réorganiser les colonnes selon les spécifications
+            # Colonnes demandées : ranking, recipe_id, name, Q_Score_Bayesien_Poids_popularité, reviews_in_season, Saison
+            
+            # Créer la colonne Score_Final qui combine Q_Score et Poids_Popularité
+            if 'Score_Final' in final_df.columns:
+                final_df['Q_Score_Bayesien_Poids_popularité'] = final_df['Score_Final']
+            else:
+                # Si pas de Score_Final, calculer à partir des composants
+                final_df['Q_Score_Bayesien_Poids_popularité'] = (
+                    final_df['Q_Score_Bayesien'] * final_df['Poids_Popularite']
+                )
+            
+            # Sélectionner uniquement les colonnes demandées dans l'ordre spécifié
+            columns_wanted = [
+                'rank_in_season',           # → ranking 
+                'recipe_id',                # → recipe_id
+                'name',                     # → name
+                'Q_Score_Bayesien_Poids_popularité',  # → Q_Score_Bayesien_Poids_popularité
+                'reviews_in_season',        # → reviews_in_season
+                'season'                    # → Saison
+            ]
+            
+            # Renommer les colonnes pour les noms finaux
+            column_renames = {
+                'rank_in_season': 'ranking',
+                'season': 'Saison'
+            }
+            
+            # Vérifier que toutes les colonnes existent
+            available_columns = [col for col in columns_wanted if col in final_df.columns]
+            final_df = final_df[available_columns]
+            
+            # Renommer les colonnes
+            final_df = final_df.rename(columns=column_renames)
+            
+            # Sauvegarder
+            filename = f"top{TOP_N}_{recipe_type}_for_each_season.csv"
+            output_path = results_path / filename
+            
+            final_df.to_csv(output_path, index=False, encoding='utf-8')
+            saved_files[recipe_type] = output_path
+            
+            print(f"   Sauvegardé : {filename}")
+            print(f"      {len(final_df)} recettes totales")
+            print(f"      🌍 {len(combined_data)} saisons")
+            
+        else:
+            print(f"   Aucune donnée pour {recipe_type}")
     
     return saved_files
 

@@ -115,6 +115,6 @@ def load_data(data_dir: Path = RAW_DATA_DIR) -> Tuple[pd.DataFrame, pd.DataFrame
 if __name__ == "__main__":
     # Test du chargement
     recipes, interactions = load_data()
-    print(f"\n✅ Test réussi!")
+    print(f"\nTest réussi!")
     print(f"   Recettes : {len(recipes)} lignes")
     print(f"   Interactions : {len(interactions)} lignes")

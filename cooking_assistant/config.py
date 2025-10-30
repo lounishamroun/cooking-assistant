@@ -26,6 +26,7 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
 # Sorties et rapports
 RESULTS_DIR = ROOT_DIR / "resultats"
+RESULTS_PROCESSED_DIR = RESULTS_DIR / "processed" 
 REPORTS_DIR = ROOT_DIR / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
@@ -36,7 +37,7 @@ JUSTIFICATION_DIR = ROOT_DIR / "docs" / "bayesian_parameters_docs_justification"
 LOGS_DIR = ROOT_DIR / "logs"
 
 # Créer les dossiers s'ils n'existent pas
-for directory in [RESULTS_DIR, REPORTS_DIR, FIGURES_DIR, JUSTIFICATION_DIR, LOGS_DIR,
+for directory in [RESULTS_DIR, RESULTS_PROCESSED_DIR, REPORTS_DIR, FIGURES_DIR, JUSTIFICATION_DIR, LOGS_DIR,
                   RAW_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
 

@@ -51,7 +51,7 @@ def analyze_top_reviews_by_type_season(
     # Analyser chaque combinaison type × saison
     for recipe_type in RECIPE_TYPES:
         if verbose:
-            print(f"\n📊 Analyse de {recipe_type.upper()}...")
+            print(f"\nAnalyse de {recipe_type.upper()}...")
         
         # Filtrer par type de recette
         type_df = merged_df[merged_df['type'] == recipe_type].copy()
@@ -170,7 +170,7 @@ def analyze_top_reviews_by_type_season(
         )
         
         if verbose:
-            print("\n✅ Statistiques médianes ajoutées au fichier combiné")
+            print("\nStatistiques médianes ajoutées au fichier combiné")
     
     # Générer le timestamp pour le nom de fichier
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -191,7 +191,7 @@ def analyze_top_reviews_by_type_season(
     
     if verbose:
         print(f"\n{'=' * 80}")
-        print(f"💾 Résultats sauvegardés : {combined_filename}")
+        print(f"Résultats sauvegardés : {combined_filename}")
         print(f"   Emplacement : {output_dir}")
         print(f"   Total lignes : {len(combined_results):,}")
         print(f"{'=' * 80}\n")
