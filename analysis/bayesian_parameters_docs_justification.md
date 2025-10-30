@@ -1,27 +1,36 @@
-#  Parameter Selection analysis
+#  Parameter Selection Analysis
 
 ## Purpose
 
-This directory contains an analysis files that contribute to justify the choice of **Bayesian parameters** (kb, kpop, gamma) used in the recipe recommendation system for a top 20 evaluation of recipes by season and by type of recipes (dish,beverage, dessert)
+This directory contains analysis files that contribute to justify the choice of **Bayesian parameters** (kb, kpop, gamma) used in the recipe recommendation system for a top 20 evaluation of recipes by season and by type of recipes (dish, beverage, dessert).
+
+The analysis uses existing scripts from the `scripts/` directory:
+- `scripts/season_distribution.py` - For seasonal distribution analysis  
+- `scripts/top_reviews_analyzer.py` - For top reviews analysis
 
 
 ### Generated Files
 
-- **`top_100_reviews_by_type_season.csv`** - Combined analysis of top 100 recipes by reviews for each recipe type and season
+The analysis generates 2 CSV files saved in `analysis/results_to_analyse/`:
+
 - **`distribution_saisonniere_par_type.csv`** - Seasonal distribution analysis showing review counts by recipe type and season
+- **`top_100_reviews_by_type_season_[timestamp].csv`** - Combined analysis of top 100 recipes by reviews for each recipe type and season
 
-## how to make File Generation to make the analysis
+## How to Generate Analysis Files
 
-
-These files are automatically generated when running:
+These files are automatically generated when running the analysis script:
 ```bash
-python main.py
+cd analysis/parameter_justification
+python generate_csv_to_analyse_for_parameter_justification.py
 ```
-Both analyses are performed together at the beginning in **Step 1** (Parameter Justification Analysis) of the main pipeline and creates:
-- Statistical breakdown of review distribution patterns by recipe type and season  
-- A comprehensive view of the top 100 most-reviewed recipes across all combinations of recipe types and seasons
 
-This early analysis provides immediate insights into the data structure and helps to justifies the bayesiean parameters choices.
+The script will:
+1. **Load classified recipes** from the cooking assistant data modules
+2. **Run seasonal distribution analysis** using `scripts/season_distribution.py`
+3. **Run top reviews analysis** using `scripts/top_reviews_analyzer.py`
+4. **Save both CSV files** directly to `analysis/results_to_analyse/`
+
+This analysis provides immediate insights into the data structure and helps to justify the Bayesian parameters choices.
 
 ### Data Structure
 

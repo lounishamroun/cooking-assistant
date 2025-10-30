@@ -1,9 +1,18 @@
 [tool.poetry]
-name = "project-mangetamain"
+name = "cooking-assistant"
 version = "0.1.0"
 description = ""
-authors = ["Lounis Hamroun <lounis.hamroun@gmail.com>, Alexandre Donnat <alexandredonnat1@gmail.com>, Omar Fekih <omarfh788@gmail.com>, Leo Ivars <ivars.leo@gmail.com>"]
+authors = [
+    "Lounis Hamroun <lounis.hamroun@gmail.com>",
+    "Alexandre Donnat <alexandredonnat1@gmail.com>",
+    "Omar Fekih <omarfh788@gmail.com>",
+    "Leo Ivars <ivars.leo@gmail.com>"
+]
 readme = "README.md"
+packages = [
+    { include = "cooking_assistant" },
+    { include = "scripts" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
