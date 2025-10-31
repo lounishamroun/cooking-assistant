@@ -233,7 +233,7 @@ nav_items = [
     ("🔍", "Recipe Lookup", "Search individual recipes"),
     ("🧭", "Analytical Quadrants", "Effort vs popularity quadrants & insights"),
     ("🧪", "Correlation Matrix", "Ordered correlation heatmap"),
-    ("📐", "Methodology", "Bayesian formulas & parameters")
+    ("🌈", "Seasonal Distribution", "Seasonal review share by recipe type")
 ]
 
 for icon, page_name, description in nav_items:
@@ -679,29 +679,51 @@ elif page == "Correlation Matrix":
     section_header("Ordered Correlation Matrix")
     render_correlation(df)
     info_box("Reading", "Each cell shows Spearman correlation (monotonic relationship) between numeric features. We remove IDs and constant columns. Ordering by |corr(bayes_mean)| highlights features most associated with popularity. Values near 0 mean weak relation; strong colors do NOT imply causation.")
+elif page == "Seasonal Distribution":
+    section_header("Seasonal Review Distribution")
+    info_box("Purpose", "Shows the share of reviews per season for each recipe type to understand seasonal engagement.")
+    # Load latest season distribution CSV from justification directory
+    @st.cache_data(show_spinner=False)
+    def load_season_distribution():
+        target_dir = "analysis_parameter_justification/results_to_analyse"
+        if not os.path.isdir(target_dir):
+            return pd.DataFrame()
+        # Prefer canonical latest file if exists
+        canonical = os.path.join(target_dir, "season_type_distribution_latest.csv")
+        if os.path.exists(canonical):
+            return pd.read_csv(canonical)
+        # Fallback: pick most recent timestamped season_type_distribution_*.csv
+        candidates = [f for f in os.listdir(target_dir) if f.startswith("season_type_distribution_") and f.endswith('.csv')]
+        if not candidates:
+            return pd.DataFrame()
+        latest = sorted(candidates)[-1]
+        return pd.read_csv(os.path.join(target_dir, latest))
 
-elif page == "Methodology":
-    section_header("Methodology & Bayesian Parameters")
-    st.markdown("""
-    <div class='info-box formulas-box'>
-        <h4>Formulas</h4>
-        <p><strong>Q-Score</strong> = (valid_avg_rating × nb_valid_ratings + season_avg × kb) / (nb_valid_ratings + kb)<br>
-        <strong>Pop_Weight</strong> = (1 - exp(-nb_season_reviews / kpop))^gamma<br>
-        <strong>Final_Score</strong> = Q-Score × Pop_Weight</p>
-    </div>
-    """, unsafe_allow_html=True)
-    try:
-        # Ensure project root in sys.path when app executed from deployed working dir
-        import sys as _sys, pathlib as _pl
-        _root = _pl.Path(__file__).resolve().parents[2]
-        if str(_root) not in _sys.path:
-            _sys.path.insert(0, str(_root))
-        from cooking_assistant import config as cfg
-        bp = cfg.BAYESIAN_PARAMS
-        params_df = pd.DataFrame([
-            {"Type": t, "kb": v["kb"], "kpop": v["kpop"], "gamma": v["gamma"]} for t, v in bp.items()
-        ])
-        st.dataframe(params_df, use_container_width=True)
-        info_box("Rationale", "Parameters kept constant across seasons due to stable review distribution and comparable medians; seasonal adjustment already captured via season_avg in Q-Score.")
-    except Exception as e:
-        st.warning(f"Unable to load BAYESIAN_PARAMS: {e}")
+    dist_df = load_season_distribution()
+    if dist_df.empty:
+        st.warning("Season distribution file not found. Generate it with the justification script.")
+    else:
+        # Standardize columns if French naming
+        rename_map = {
+            'Type_Recette': 'recipe_type',
+            'Saison': 'Season',
+            'Nombre_Reviews': 'Reviews',
+            'Pourcentage': 'Percentage'
+        }
+        for k, v in rename_map.items():
+            if k in dist_df.columns and v not in dist_df.columns:
+                dist_df = dist_df.rename(columns={k: v})
+        # Ensure correct ordering of seasons
+        season_order = ['Spring','Summer','Fall','Winter']
+        dist_df['Season'] = pd.Categorical(dist_df['Season'], season_order, ordered=True)
+        type_choice = st.selectbox("Recipe Type:", sorted(dist_df['recipe_type'].unique()))
+        metric_mode = st.radio("Metric", ["Percentage", "Reviews"], horizontal=True)
+        filtered = dist_df[dist_df['recipe_type'] == type_choice].sort_values('Season')
+        values_col = 'Percentage' if metric_mode == 'Percentage' else 'Reviews'
+        # Plotly pie chart
+        fig = px.pie(filtered, names='Season', values=values_col, hole=0.35,
+                     color='Season', color_discrete_sequence=px.colors.qualitative.Set3)
+        fig.update_traces(textinfo='label+percent' if metric_mode=='Percentage' else 'label+value')
+        fig.update_layout(margin=dict(t=30,l=0,r=0,b=0))
+        st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(filtered[['Season','Reviews','Percentage']].style.format({'Reviews':'{:,.0f}','Percentage':'{:.2f}%'}), use_container_width=True)
