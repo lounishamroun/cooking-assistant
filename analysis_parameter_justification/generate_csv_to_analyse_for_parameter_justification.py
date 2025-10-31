@@ -41,9 +41,9 @@ def main():
         # Try to load classified recipes first, if not available load RAW and classify
         try:
             recipes_df = load_classified_recipes()
-            print("   ✓ Données classifiées trouvées")
+            print(" Données classifiées trouvées")
         except FileNotFoundError:
-            print("   ⚠ Données classifiées non trouvées, chargement des données RAW...")
+            print(" Données classifiées non trouvées, chargement des données RAW...")
             from cooking_assistant.data.loader import load_data
             recipes_df, _ = load_data()
             
@@ -53,7 +53,7 @@ def main():
             
             # Add basic type classification
             recipes_df['type'] = recipes_df.apply(classify_recipe_type, axis=1)
-            print(f"   ✓ {len(recipes_df):,} recettes classifiées automatiquement")
+            print(f" {len(recipes_df):,} recettes classifiées automatiquement")
         
         from cooking_assistant.data.loader import load_interactions
         interactions_df = load_interactions()
@@ -67,11 +67,19 @@ def main():
         print("\n2. Analyse distribution saisonnière...")
         seasonal_results = analyze_seasonal_distribution(merged_df)
         
-        # Copier le fichier dans results_to_analyse avec timestamp
+        # Sauvegarde saisonnière (timestamp + alias latest)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        seasonal_output = os.path.join(output_dir, f"season_type_distribution_{timestamp}.csv")
-        seasonal_results['dataframe'].to_csv(seasonal_output, index=False)
-        print(f"   Sauvegardé: season_type_distribution_{timestamp}.csv")
+        seasonal_filename = f"season_type_distribution_{timestamp}.csv"
+        seasonal_output = os.path.join(output_dir, seasonal_filename)
+        df_season = seasonal_results['dataframe']
+        df_season.to_csv(seasonal_output, index=False)
+        # Canonical alias for Streamlit loader
+        seasonal_latest = os.path.join(output_dir, "season_type_distribution_latest.csv")
+        try:
+            df_season.to_csv(seasonal_latest, index=False)
+        except Exception as alias_err:
+            print(f"  Impossible d'écrire l'alias latest: {alias_err}")
+        print(f"   Sauvegardé: {seasonal_filename} (+ alias season_type_distribution_latest.csv)")
         
         # 3. Analyse top reviews
         print("\n3. Analyse top reviews...")
@@ -81,7 +89,21 @@ def main():
             output_dir=output_dir,
             top_n=100
         )
-        print(f"   Sauvegardé: top_100_reviews_by_type_season_*.csv")
+        # Create canonical alias for most recent top_100 file
+        try:
+            latest_top_files = sorted([
+                f for f in os.listdir(output_dir)
+                if f.startswith("top_100_reviews_by_type_season_") and f.endswith('.csv')
+            ])
+            if latest_top_files:
+                newest = latest_top_files[-1]
+                src = os.path.join(output_dir, newest)
+                alias = os.path.join(output_dir, "top_100_reviews_by_type_season_latest.csv")
+                with open(src, 'rb') as r, open(alias, 'wb') as w:
+                    w.write(r.read())
+        except Exception as e_alias:
+            print(f"   Impossible de créer alias top_100 latest: {e_alias}")
+        print("   Sauvegardé: top_100_reviews_by_type_season_*.csv (+ alias top_100_reviews_by_type_season_latest.csv)")
         
         # 4. Résumé
         print("\nANALYSE TERMINÉE!")
