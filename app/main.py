@@ -58,13 +58,17 @@ def run_classification_script():
     try:
         # Get script path
         script_path = project_root / "scripts" / "01_classifier_generator.py"
-        python_exe = project_root / ".venv" / "bin" / "python"
+        # Prefer Poetry virtualenv python if it exists, else fall back to current interpreter
+        poetry_python = project_root / ".venv" / "bin" / "python"
+        python_exe = poetry_python if poetry_python.exists() else Path(sys.executable)
+        if not poetry_python.exists():
+            print("[env] .venv not found; falling back to current interpreter. If dependencies missing, run: 'poetry install'.")
         
         # Execute classification script
         result = subprocess.run([
-            str(python_exe), 
+            str(python_exe),
             str(script_path)
-        ], 
+        ],
         cwd=str(project_root),
         capture_output=True, 
         text=True,
