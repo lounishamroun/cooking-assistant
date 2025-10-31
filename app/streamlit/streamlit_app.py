@@ -5,6 +5,7 @@ dashboard for recipe classification analysis.
 """
 
 import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import streamlit as st
@@ -685,19 +686,32 @@ elif page == "Seasonal Distribution":
     # Load latest season distribution CSV from justification directory
     @st.cache_data(show_spinner=False)
     def load_season_distribution():
-        target_dir = "analysis_parameter_justification/results_to_analyse"
-        if not os.path.isdir(target_dir):
+        """Load season distribution dataframe.
+
+        Resolution strategy:
+        1. Look for canonical file season_type_distribution_latest.csv (committed).
+        2. Otherwise pick most recent timestamped season_type_distribution_*.csv.
+        Returns empty DataFrame if directory missing or no candidates.
+        """
+        # Resolve project root (two levels up from this file: app/streamlit/ -> project root)
+        root = Path(__file__).resolve().parents[2]
+        target_dir = root / "analysis_parameter_justification" / "results_to_analyse"
+        if not target_dir.is_dir():
             return pd.DataFrame()
-        # Prefer canonical latest file if exists
-        canonical = os.path.join(target_dir, "season_type_distribution_latest.csv")
-        if os.path.exists(canonical):
-            return pd.read_csv(canonical)
-        # Fallback: pick most recent timestamped season_type_distribution_*.csv
-        candidates = [f for f in os.listdir(target_dir) if f.startswith("season_type_distribution_") and f.endswith('.csv')]
+        canonical = target_dir / "season_type_distribution_latest.csv"
+        if canonical.exists():
+            try:
+                return pd.read_csv(canonical)
+            except Exception:
+                return pd.DataFrame()
+        candidates = sorted([f for f in target_dir.iterdir() if f.name.startswith("season_type_distribution_") and f.suffix == ".csv"])
         if not candidates:
             return pd.DataFrame()
-        latest = sorted(candidates)[-1]
-        return pd.read_csv(os.path.join(target_dir, latest))
+        latest = candidates[-1]
+        try:
+            return pd.read_csv(latest)
+        except Exception:
+            return pd.DataFrame()
 
     dist_df = load_season_distribution()
     if dist_df.empty:
