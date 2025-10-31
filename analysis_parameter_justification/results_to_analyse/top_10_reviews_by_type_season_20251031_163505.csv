@@ -1,9 +1,0 @@
-season,type,recipe_id,name,total_reviews,valid_reviews,median_reviews_type_season
-Spring,plat,1,Salade de Printemps,1,1.0,1.0
-Fall,plat,4,Soupe d'Hiver,2,2.0,1.5
-Fall,plat,1,Salade de Printemps,1,1.0,1.5
-Winter,plat,1,Salade de Printemps,1,1.0,1.0
-Winter,plat,4,Soupe d'Hiver,1,0.0,1.0
-Spring,dessert,2,Mousse au Chocolat,1,1.0,1.0
-Winter,dessert,2,Mousse au Chocolat,1,0.0,1.0
-Summer,boisson,3,Thé Glacé,2,1.0,2.0

@@ -1,7 +1,25 @@
 __pycache__/
 *.pyc
-.csv
 .env
 .DS_Store
 .vscode/
-.log
+*.log
+logs/
+
+# Ignore large dataset CSV exports (raw/interim/processed) and analysis result dumps
+data/raw/*.csv
+data/interim/*.csv
+data/processed/*.csv
+analysis_parameter_justification/results_to_analyse/*.csv
+
+# Allow keeping small illustrative samples (place in data/samples/)
+!data/samples/*.csv
+
+# Ignore timestamped result dumps anywhere
+*/*_20????????_*.csv
+
+# Cache directories
+**/__pycache__/
+
+# Ignore generated HTML docs build output
+docs/_build/
