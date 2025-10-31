@@ -21,6 +21,15 @@ data/interim/*.csv
 data/processed/*.csv
 analysis_parameter_justification/results_to_analyse/*.csv
 
+# Whitelist essential demo artifacts for hosted Streamlit (small size)
+!data/interim/recipes_classified_enriched.csv
+#!data/interim/recipes_classified.csv
+!data/processed/top20_plat_for_each_season.csv
+!data/processed/top20_dessert_for_each_season.csv
+!data/processed/top20_boisson_for_each_season.csv
+!data/processed/top20_boisson_for_each_season.csv
+
+
 # Allow keeping small illustrative samples (place in data/samples/)
 !data/samples/*.csv
 
