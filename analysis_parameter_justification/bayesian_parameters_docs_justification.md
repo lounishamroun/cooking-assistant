@@ -74,7 +74,7 @@ This analysis helps to justify the parameter selection by showing:
 **Where:**
 - valid_avg_rating : Average rating of reviews with rating > 0 (excludes rating=0 which are considered as non-ratings)
 - nb_valid_ratings : Number of reviews with rating > 0 for this recipe in this season
-- season_avg : Average rating for all recipes of this type during this season (seasonal baseline)
+- season_avg: Seasonal baseline for this recipe type ( with ratings equal to 0 excluded)
 - kb : Bayesian parameter controlling conservatism 
 
 ### Popularity Weight Formula
