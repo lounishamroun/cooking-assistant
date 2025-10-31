@@ -110,6 +110,31 @@ def _standardize_top20_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 @st.cache_data(show_spinner=False)
+def _normalize_language_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename any French column headers to English to ensure consistent UI language.
+    This is idempotent and safe if columns are already English.
+    """
+    if df is None or df.empty:
+        return df
+    mapping = {
+        # Season distribution / justification
+        'Type_Recette': 'recipe_type',
+        'Saison': 'Season',
+        'Nombre_Reviews': 'Reviews',
+        'Pourcentage': 'Percentage',
+        # Rankings / scoring
+        'Q_Score_Bayesien': 'Bayesian_Score',
+        'Q_Score_Bayesien_Poids_popularité': 'Bayesian_Score',
+        'Q_Score_Bayesien_Poids_popularite': 'Bayesian_Score',
+        # Confidence alias sometimes exported
+        'conf_%': 'confidence_pct'
+    }
+    # Only rename keys that exist and target name not already present to avoid duplicates
+    rename_pairs = {fr: en for fr, en in mapping.items() if fr in df.columns and (en not in df.columns or fr == 'conf_%')}
+    if rename_pairs:
+        df = df.rename(columns=rename_pairs)
+    return df
+
 def load_data():
     # Prefer enriched dataset if present (non-invasive enrichment layer)
     enriched_path = "data/interim/recipes_classified_enriched.csv"
@@ -202,6 +227,9 @@ def load_data():
         top20_df = pd.DataFrame(columns=['Ranking','Recipe_ID','Name','Bayesian_Score','Season_Reviews','Season','recipe_type'])
 
     top20_df = _standardize_top20_columns(top20_df)
+    # Normalize any lingering French headers
+    df = _normalize_language_columns(df)
+    top20_df = _normalize_language_columns(top20_df)
     # English display type column
     type_map = {'plat': 'main', 'boisson': 'drink', 'dessert': 'dessert'}
     if not top20_df.empty:
@@ -714,6 +742,7 @@ elif page == "Seasonal Distribution":
             return pd.DataFrame()
 
     dist_df = load_season_distribution()
+    dist_df = _normalize_language_columns(dist_df)
     if dist_df.empty:
         st.warning("Season distribution file not found. Generate it with the justification script.")
     else:
