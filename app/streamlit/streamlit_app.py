@@ -262,7 +262,8 @@ nav_items = [
     ("📊", "Historical Trends", "Publication trends over time"),
     ("🔍", "Recipe Lookup", "Search individual recipes"),
     ("🧭", "Analytical Quadrants", "Effort vs popularity quadrants & insights"),
-    ("🧪", "Correlation Matrix", "Ordered correlation heatmap")
+    ("🧪", "Correlation Matrix", "Ordered correlation heatmap"),
+    ("🔬", "Methodology", "Classifier & Bayesian scoring methodology")
 ]
 
 for icon, page_name, description in nav_items:
@@ -770,3 +771,120 @@ elif page == "Seasonal Distribution":
         fig.update_layout(margin=dict(t=30,l=0,r=0,b=0))
         st.plotly_chart(fig, use_container_width=True)
         st.dataframe(filtered[['Season','Reviews','Percentage']].style.format({'Reviews':'{:,.0f}','Percentage':'{:.2f}%'}), use_container_width=True)
+
+# -------------------------------
+# METHODOLOGY PAGE
+# -------------------------------
+elif page == "Methodology":
+    section_header("Recipe Classification & Ranking Methodology")
+    st.markdown("""
+    #### 🎯 Objective
+    Provide a transparent view of how recipes are **classified** (plat, dessert, boisson) and **ranked** (Bayesian seasonal scores).
+
+    #### 📊 Data Source
+    - **Origin**: Food.com public datasets (Recipes & Interactions)
+    - **Primary file**: `RAW_recipes.csv`
+    - **Signals**: Nutrition, names, tags, user interactions (ratings + reviews)
+    """)
+
+    st.markdown("### 🔄 Four-Phase Classification Pipeline")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("""
+        **Phase 0 – Structural Feature Extraction**
+        - Parse nutrition → cal, fat, sugar, sod, prot, sat, carbs
+        - Compute density & energy-based features (e.g., sugar_density, prot_density)
+        - Flavor-energy indexes:
+          - `sweet_idx = 0.55*sugar_E% + 0.45*sugar_density`
+          - `savory_idx = 0.55*prot_density + 0.45*(sod_density/10)`
+          - `lean_idx = 1 - fat_E%`
+        - Hybrid detection via `min(sweet_idx, savory_idx)`
+        """)
+        st.markdown("""
+        **Phase 2 – NLP Lexicon Scoring**
+        - STRONG lexicon (binary presence) & SOFT lexicon (frequency counts)
+        - Examples: `curry→plat`, `cake→dessert`, `smoothie→boisson`
+        - NLP logits: `logits = 3.0*STRONG + 0.8*SOFT + 0.1`
+        """)
+    with c2:
+        st.markdown("""
+        **Phase 1 – Prototype Similarity**
+        - Embed recipe as vector (sweet, savory, lean)
+        - Cosine similarity to prototypes:
+          - Dessert: (0.68, 0.07, 0.40)
+          - Plat:    (0.12, 0.28, 0.45)
+          - Boisson: (0.09, 0.05, 0.85)
+        - Structural logits adjusted by heuristic controls.
+        """)
+        st.markdown("""
+        **Phase 3 – Arbitration Layer**
+        - Combine structural + NLP decisions
+        - Handle agreement, disagreement, confidence-adjusted blending
+        - Apply exceptions (e.g., smoothie/milkshake → boisson)
+        """)
+
+    st.markdown("### ⭐ Bayesian Seasonal Ranking")
+    st.markdown("""
+    We compute per-season top 20 for each recipe type balancing **quality** (validated ratings) and **popularity** (review volume).
+    """)
+    c3, c4 = st.columns(2)
+    with c3:
+        st.markdown("""
+        **1. Bayesian Quality (Q-Score)**
+        `Q = (kb*season_avg + nb_valid_ratings*valid_avg_rating) / (kb + nb_valid_ratings)`
+        Parameters:
+        - `valid_avg_rating`: mean rating > 0
+        - `nb_valid_ratings`: count of ratings > 0
+        - `season_avg`: baseline for type-season
+        - `kb`: shrinkage strength
+        """)
+    with c4:
+        st.markdown("""
+        **2. Popularity Weight**
+        `Pop_Weight = (1 - exp(-nb_season_reviews / kpop))^gamma`
+        Parameters:
+        - `nb_season_reviews`: total reviews (incl. 0 ratings)
+        - `kpop`: popularity scale parameter
+        - `gamma`: amplification factor
+        """)
+    st.markdown("""
+    **3. Final Score**
+    `Final = Q * Pop_Weight`
+    → Produces a calibrated seasonal ranking.
+    """)
+
+    st.markdown("### ⚙ Bayesian Parameters (Config)")
+    params_table = pd.DataFrame({
+        'Recipe Type': ['Plat (Main)', 'Dessert', 'Boisson (Drink)'],
+        'kb': [65, 60, 20],
+        'kpop': [47, 40, 4],
+        'gamma': [1.2, 1.2, 0.7]
+    })
+    st.dataframe(params_table, use_container_width=True)
+
+    c5, c6, c7 = st.columns(3)
+    with c5:
+        st.markdown("""**kb (Shrinkage)**\nHigher = more conservative early quality estimates.""")
+    with c6:
+        st.markdown("""**kpop (Popularity Scale)**\nControls review volume effect saturation.""")
+    with c7:
+        st.markdown("""**gamma (Amplification)**\nAdjusts balance between popularity and baseline quality.""")
+
+    st.markdown("### 🔍 Key Assumptions")
+    st.markdown("""
+    1. Rating 0 = interaction without rating (excluded from quality mean)  
+    2. Seasonal baselines derived empirically per type  
+    3. Parameters tuned from exploratory volume threshold analysis  
+    4. Popularity weight uses diminishing returns curve (exponential form)  
+    5. Confidence scores are not injected into score; used only for diagnostics  
+    """)
+
+    st.markdown("### 📁 Reference Files")
+    st.markdown("""
+    - Classification output: `data/interim/recipes_classified.csv`  
+    - Rankings: `data/processed/top20_<type>_for_each_season.csv`  
+    - Season distribution: `analysis_parameter_justification/results_to_analyse/season_type_distribution_latest.csv`  
+    - Top 100 reviews: `analysis_parameter_justification/results_to_analyse/top_100_reviews_by_type_season_latest.csv`  
+    """)
+
+    st.info("For deeper derivations and justification, consult the linked Sphinx methodology pages and justification markdown documents.")
