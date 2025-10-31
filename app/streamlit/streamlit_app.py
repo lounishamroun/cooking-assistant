@@ -670,6 +670,11 @@ elif page == "Methodology":
     </div>
     """, unsafe_allow_html=True)
     try:
+        # Ensure project root in sys.path when app executed from deployed working dir
+        import sys as _sys, pathlib as _pl
+        _root = _pl.Path(__file__).resolve().parents[2]
+        if str(_root) not in _sys.path:
+            _sys.path.insert(0, str(_root))
         from cooking_assistant import config as cfg
         bp = cfg.BAYESIAN_PARAMS
         params_df = pd.DataFrame([
