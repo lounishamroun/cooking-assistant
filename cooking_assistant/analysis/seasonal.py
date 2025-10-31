@@ -1,28 +1,31 @@
-"""
-SEASONAL UTILITIES
+"""Season derivation utilities.
 
-Module to determine season from a date.
-Based on scripts/season_utils.py
+Provides :func:`get_season_from_date` which maps a pandas ``Timestamp`` to
+an astronomical season label (Spring, Summer, Fall, Winter). Invalid or
+missing dates yield ``"Unknown"``.
 """
 
 import pandas as pd
 
 
 def get_season_from_date(date: pd.Timestamp) -> str:
-    """
-    Returns the astronomical season corresponding to a date.
-    
-    Astronomical seasons:
-    - Spring: March 21 to June 20
-    - Summer: June 21 to September 20
-    - Fall: September 21 to December 20
-    - Winter: December 21 to March 20
-    
-    Args:
-        date: Date to analyze (pd.Timestamp)
-        
-    Returns:
-        Season name: 'Spring', 'Summer', 'Fall', 'Winter', or 'Unknown'
+    """Return the astronomical season for a given date.
+
+    Boundaries (inclusive start, inclusive end):
+    - Spring: 21 Mar – 20 Jun
+    - Summer: 21 Jun – 20 Sep
+    - Fall  : 21 Sep – 20 Dec
+    - Winter: 21 Dec – 20 Mar
+
+    Parameters
+    ----------
+    date : pd.Timestamp
+        Parsed timestamp; ``NaT`` returns ``"Unknown"``.
+
+    Returns
+    -------
+    str
+        One of ``"Spring"``, ``"Summer"``, ``"Fall"``, ``"Winter"`` or ``"Unknown"``.
     """
     if pd.isna(date):
         return 'Unknown'

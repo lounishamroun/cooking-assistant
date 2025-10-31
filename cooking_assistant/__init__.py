@@ -1,10 +1,14 @@
-"""
-Cooking Assistant - Recipe classification and analysis by type and season.
+"""Cooking Assistant package.
 
-This package provides tools to:
-- Download and load recipe data
-- Classify recipes (main dish, dessert, beverage)
-- Analyze and create rankings by type and season
+Exposes utilities for:
+* Data acquisition & loading (``data``)
+* Seasonal labeling & review volume analysis (``analysis``)
+* Bayesian ranking computation (``analysis.scoring``)
+* Results persistence (``utils.results``)
+* Multi-signal classifier output consumption (via classified recipes file)
+
+Public API re-exports in submodules are limited to the core analytical and
+I/O functions to keep the surface stable for documentation and importers.
 """
 
 __version__ = "0.1.0"

@@ -1,8 +1,8 @@
-"""
-RESULTS MANAGEMENT
+"""Results persistence and console summaries.
 
-Module to save and display analysis results.
-Based on scripts/results_handler.py
+Utilities to serialize top-N seasonal ranking tables and produce readable
+terminal summaries. All functions operate on DataFrames already scored by
+the analysis module.
 """
 
 import pandas as pd
@@ -19,17 +19,23 @@ def save_top_results(
     results_path: Path = RESULTS_DIR,
     top_n: int = 20
 ) -> Path:
-    """
-    Saves top N results to a CSV file.
-    
-    Args:
-        top_n_dict: Dictionary {season: DataFrame} with top N
-        recipe_type: Recipe type (plat, dessert, boisson)
-        results_path: Output folder path
-        top_n: Number of recipes in top
-        
-    Returns:
-        Path of saved file
+    """Persist a combined CSV of seasonal top-N rows for one recipe type.
+
+    Parameters
+    ----------
+    top_n_dict : Dict[str, pd.DataFrame]
+        Mapping season → ranked DataFrame.
+    recipe_type : str
+        Category label (``plat``, ``dessert``, ``boisson``).
+    results_path : Path, default ``RESULTS_DIR``
+        Destination directory (created if missing).
+    top_n : int, default 20
+        Number included per season (used only for filename convention).
+
+    Returns
+    -------
+    Path
+        Location of the saved CSV.
     """
     print(f"\nSaving results - {recipe_type}...")
     
@@ -75,14 +81,18 @@ def display_top_summary(
     season_order: List[str] = SEASON_ORDER,
     show_top: int = 5
 ) -> None:
-    """
-    Displays a summary of best recipes for each season.
-    
-    Args:
-        top_n_dict: Dictionary {season: DataFrame}
-        recipe_type: Recipe type (for display)
-        season_order: List of seasons in order
-        show_top: Number of recipes to display per season
+    """Print a concise console summary of top scored recipes per season.
+
+    Parameters
+    ----------
+    top_n_dict : Dict[str, pd.DataFrame]
+        Mapping season → ranked DataFrame.
+    recipe_type : str
+        Category label for heading display.
+    season_order : List[str], default ``SEASON_ORDER``
+        Order in which seasons are displayed.
+    show_top : int, default 5
+        Number of rows printed for each season.
     """
     print(f"\n{'=' * 80}")
     print(f"TOP {show_top} RECIPES BY SEASON - {recipe_type.upper()}")
@@ -119,16 +129,21 @@ def save_all_type_results(
     results_path: Path = RESULTS_DIR,
     top_n: int = 20
 ) -> Dict[str, Path]:
-    """
-    Saves results for all recipe types.
-    
-    Args:
-        all_results: Dict {type: {season: DataFrame}}
-        results_path: Output folder path
-        top_n: Number of recipes in top
-        
-    Returns:
-        Dictionary {type: filepath} of saved files
+    """Persist combined top-N CSV for each recipe type.
+
+    Parameters
+    ----------
+    all_results : Dict[str, Dict[str, pd.DataFrame]]
+        Mapping recipe_type → (season → DataFrame).
+    results_path : Path, default ``RESULTS_DIR``
+        Destination directory.
+    top_n : int, default 20
+        Number included per season (for filename purpose only).
+
+    Returns
+    -------
+    Dict[str, Path]
+        Mapping recipe_type → saved CSV path.
     """
     saved_files = {}
     
@@ -148,21 +163,19 @@ def save_combined_results_by_type(
     all_results: Dict[str, Dict[str, pd.DataFrame]],
     results_path: Path = None
 ) -> Dict[str, Path]:
-    """
-    Saves 3 final CSV files (one per type) with all seasons combined.
-    
-    Args:
-        all_results: Dict {recipe_type: {season: DataFrame}}
-        results_path: Output path (default: PROCESSED_DATA_DIR)
-        
-    Returns:
-        Dict {recipe_type: filepath} of saved files
-        
-        Example output:
-        data/processed/
-        ├── top20_plat_for_each_season.csv      (80 recipes: 20 per season)
-        ├── top20_dessert_for_each_season.csv   (80 recipes: 20 per season)  
-        └── top20_boisson_for_each_season.csv   (80 recipes: 20 per season)
+    """Create one CSV per recipe type aggregating all seasonal top lists.
+
+    Parameters
+    ----------
+    all_results : Dict[str, Dict[str, pd.DataFrame]]
+        Mapping recipe_type → (season → DataFrame) already scored and ranked.
+    results_path : Path, optional
+        Destination directory; defaults to ``PROCESSED_DATA_DIR`` when ``None``.
+
+    Returns
+    -------
+    Dict[str, Path]
+        Mapping recipe_type → saved aggregated CSV path.
     """
     from ..config import PROCESSED_DATA_DIR, SEASONS, TOP_N
     

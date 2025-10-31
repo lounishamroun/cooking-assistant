@@ -7,6 +7,12 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 from datetime import datetime
+import sys, pathlib
+
+# Ensure project root is on sys.path even if tests run from inside tests/ directory
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from cooking_assistant.config import BAYESIAN_PARAMS
 

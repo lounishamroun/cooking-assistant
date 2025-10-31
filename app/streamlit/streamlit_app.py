@@ -9,25 +9,26 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import plotly.express as px
+# Robust import of local components: works whether run as script or module
+try:
+    from .components import (
+        inject_css,
+        render_insights_and_quadrants,
+        render_correlation,
+        section_header,
+        info_box,
+    )
+except ImportError:  # running as a top-level script via `streamlit run`
+    from components import (
+        inject_css,
+        render_insights_and_quadrants,
+        render_correlation,
+        section_header,
+        info_box,
+    )
 
 
-st.markdown(
-    """
-    <style>
-        .stApp {background-color:#1e1e1e;color:#ffffff;font-family:'Segoe UI',sans-serif;}
-        .main-header {font-size:2.4rem;font-weight:600;text-align:center;margin-bottom:1.5rem;border-bottom:2px solid #444;padding-bottom:.75rem;}
-        .section-header {font-size:1.6rem;font-weight:500;margin-top:1.5rem;margin-bottom:.75rem;border-left:4px solid #0078d4;padding-left:.75rem;}
-        .description-text {font-size:.95rem;line-height:1.55;color:#cccccc;margin-bottom:1.2rem;}
-        .home-card,.metric-card {background:#2d2d2d;border:1px solid #444;border-radius:10px;padding:1.25rem;margin:.75rem 0;}
-        .metric-card {border-left:4px solid #0078d4;}
-        div[data-testid="stSidebar"] .stButton>button {background:#2d2d2d;border:1px solid #4A4A4A;border-radius:8px;padding:10px 14px;margin:4px 0;color:#fff;font-weight:500;transition:.25s all;width:100%;text-align:left;}
-        div[data-testid="stSidebar"] .stButton>button:hover {background:#0078d4;border-color:#0078d4;transform:translateX(4px);}
-        div[data-testid="stSidebar"] .element-container:first-of-type .stButton>button {background:linear-gradient(135deg,#d13438,#b12a35);border:2px solid #d13438;border-radius:50%;width:60px;height:60px;font-size:24px;margin:0 auto 16px;display:block;}
-        .nav-header {font-size:19px;font-weight:600;margin-bottom:16px;text-align:center;border-bottom:2px solid #0078d4;padding-bottom:8px;}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Inline style block removed to rely solely on external stylesheet (`styles.css`) injected by inject_css().
 
 # Page configuration
 st.set_page_config(
@@ -35,6 +36,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+inject_css()
 
 # -------------------------------
 # Load and prepare data
@@ -91,8 +93,19 @@ def _standardize_top20_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def load_data():
-    # Main classified recipes dataset.
-    df = _safe_read_csv("data/interim/recipes_classified.csv")
+    # Prefer enriched dataset if present (non-invasive enrichment layer)
+    enriched_path = "data/interim/recipes_classified_enriched.csv"
+    base_path = "data/interim/recipes_classified.csv"
+    # Prefer enriched dataset which adds effort_score & bayes_mean (non-destructive)
+    # Ethics: Original classification file remains untouched; enrichment is additive.
+    if os.path.exists(enriched_path):
+        df = _safe_read_csv(enriched_path)
+        if {"effort_score", "bayes_mean"} <= set(df.columns):
+            st.info("Loaded enriched metrics (effort_score, bayes_mean).")
+    else:
+        df = _safe_read_csv(base_path)
+        if not df.empty:
+            st.info("Enriched file not found; using base dataset. Run: python scripts/enrich_metrics.py to add metrics.")
     if not df.empty:
         main_column_mapping = {
             'id': 'ID',
@@ -111,6 +124,32 @@ def load_data():
             df['Confidence_Percentage'] = df['Type'].map(lambda t: round(50 + type_counts.get(t, 0) * 50, 2))
             df['Confidence_Is_Synthetic'] = True
             st.info("Confidence_Percentage column missing; synthetic values generated for display only.")
+        # Mark synthetic effort/bayes if missing after enrichment preference.
+        if 'effort_score' not in df.columns:
+            df['effort_score'] = None
+            df['Effort_Is_Synthetic'] = True
+        if 'bayes_mean' not in df.columns:
+            df['bayes_mean'] = None
+            df['Bayes_Is_Synthetic'] = True
+        # Environment guard: allow teacher to disable synthetic fabrication entirely
+        disable_synth = os.getenv('STRICT_REAL_DATA') == '1'
+        # Synthetic generation occurs ONLY if metric fully absent and STRICT_REAL_DATA not enforced.
+        if 'effort_score' in df.columns and df['effort_score'].isna().all() and not disable_synth:
+            # Simple fallback: scale name length to 0-10.
+            name_len = df['Name'].map(lambda x: len(str(x)) if pd.notna(x) else 0)
+            max_len = name_len.max() or 1
+            df['effort_score'] = (name_len / max_len * 10).round(2)
+            df['Effort_Is_Synthetic'] = True
+            st.info("effort_score fully missing; synthetic effort based on name length applied.")
+        # Popularity fallback: only allowed when STRICT_REAL_DATA is off.
+        if 'bayes_mean' in df.columns and df['bayes_mean'].isna().all() and not disable_synth:
+            # Fallback only if synthetic allowed: derive pseudo-popularity from confidence percentage (scale 0-5).
+            if 'Confidence_Percentage' in df.columns:
+                df['bayes_mean'] = (pd.to_numeric(df['Confidence_Percentage'], errors='coerce') / 100 * 5).round(3)
+                df['Bayes_Is_Synthetic'] = True
+                st.info("bayes_mean fully missing; synthetic popularity derived from confidence percentage.")
+        elif 'bayes_mean' in df.columns and df['bayes_mean'].isna().all() and disable_synth:
+            st.warning("bayes_mean missing and STRICT_REAL_DATA=1; synthetic popularity disabled.")
     else:
         # Provide minimal placeholder columns for downstream UI logic.
         df = pd.DataFrame(columns=['ID', 'Name', 'Type', 'Submission_Date'])
@@ -125,6 +164,17 @@ def load_data():
     for path, rtype in ranking_files:
         tmp = _safe_read_csv(path)
         if not tmp.empty:
+            # Standardize French columns before concat so filtering works uniformly
+            french_map = {
+                'Saison': 'Season',
+                'Q_Score_Bayesien': 'Bayesian_Score',
+                'Q_Score_Bayesien_Poids_popularité': 'Bayesian_Score',
+                'Q_Score_Bayesien_Poids_popularite': 'Bayesian_Score',
+                'reviews_in_season': 'Season_Reviews'
+            }
+            for fr, en in french_map.items():
+                if fr in tmp.columns and en not in tmp.columns:
+                    tmp = tmp.rename(columns={fr: en})
             tmp['recipe_type'] = rtype
             ranking_dfs.append(tmp)
     if ranking_dfs:
@@ -134,6 +184,10 @@ def load_data():
         top20_df = pd.DataFrame(columns=['Ranking','Recipe_ID','Name','Bayesian_Score','Season_Reviews','Season','recipe_type'])
 
     top20_df = _standardize_top20_columns(top20_df)
+    # English display type column
+    type_map = {'plat': 'main', 'boisson': 'drink', 'dessert': 'dessert'}
+    if not top20_df.empty:
+        top20_df['recipe_type_en'] = top20_df['recipe_type'].map(type_map).fillna(top20_df['recipe_type'])
     return df, top20_df
 
 df, top20_df = load_data()
@@ -159,7 +213,10 @@ nav_items = [
     ("📈", "Confidence Analysis", "Classification confidence analysis"),
     ("📊", "Historical Trends", "Publication trends over time"),
     ("🌟", "Seasonal Rankings", "Top recipes by season"),
-    ("🔍", "Recipe Lookup", "Search individual recipes")
+    ("🔍", "Recipe Lookup", "Search individual recipes"),
+    ("🧭", "Analytical Quadrants", "Effort vs popularity quadrants & insights"),
+    ("🧪", "Correlation Matrix", "Ordered correlation heatmap"),
+    ("📐", "Methodology", "Bayesian formulas & parameters")
 ]
 
 for icon, page_name, description in nav_items:
@@ -261,12 +318,12 @@ if page == "Home":
 # -------------------------------
 elif page == "Distribution":
     st.markdown('<h2 class="section-header">Recipe Type Distribution</h2>', unsafe_allow_html=True)
-    
     st.markdown("""
-    <p class="description-text">
-        This pie chart shows the proportional distribution of recipe types in the dataset.
-        Each segment represents the percentage of recipes in each category (plat, dessert, boisson).
-    </p>
+    <ul class="point-list">
+        <li><strong>Goal:</strong> View proportional share of each recipe type.</li>
+        <li><strong>What you see:</strong> Percentage of total dataset per category.</li>
+        <li><strong>Use case:</strong> Quickly assess balance / class skew.</li>
+    </ul>
     """, unsafe_allow_html=True)
     
     type_counts = df['Type'].value_counts().reset_index()
@@ -310,10 +367,12 @@ elif page == "Confidence Analysis":
     
     if 'Confidence_Percentage' in df.columns:
         st.markdown("""
-        <p class="description-text">
-            This analysis examines the confidence levels of the classification algorithm.
-            Higher confidence scores indicate greater certainty in type assignments.
-        </p>
+        <ul class="point-list">
+            <li><strong>Metric:</strong> Confidence (%) output by classifier.</li>
+            <li><strong>Bar chart:</strong> Mean confidence per recipe type.</li>
+            <li><strong>Histogram:</strong> Spread of all confidence scores.</li>
+            <li><strong>Purpose:</strong> Detect uncertain segments or imbalance.</li>
+        </ul>
         """, unsafe_allow_html=True)
         
         # Average confidence by type
@@ -411,13 +470,12 @@ elif page == "Confidence Analysis":
 # -------------------------------
 elif page == "Historical Trends":
     st.markdown('<h2 class="section-header">Historical Publication Trends</h2>', unsafe_allow_html=True)
-    
     st.markdown("""
-    <p class="description-text">
-        This analysis reveals how recipe publication patterns have evolved over time. 
-        The stacked bar chart shows growth trends, seasonal preferences, and publication volume variations 
-        that may correlate with food trends or external events.
-    </p>
+    <ul class="point-list">
+        <li><strong>Chart:</strong> Stacked annual counts by type.</li>
+        <li><strong>Tracks:</strong> Growth, composition shifts, peaks.</li>
+        <li><strong>Insight goal:</strong> Identify years of surge or decline.</li>
+    </ul>
     """, unsafe_allow_html=True)
 
     # Convert date to datetime and extract year
@@ -485,27 +543,35 @@ elif page == "Historical Trends":
 # -------------------------------
 elif page == "Seasonal Rankings":
     st.markdown('<h2 class="section-header">Seasonal Recipe Rankings</h2>', unsafe_allow_html=True)
-    
     st.markdown("""
-    <p class="description-text">
-        Explore the highest-rated recipes by season and type using our Bayesian scoring system. 
-        Rankings consider review quality, quantity, and seasonal relevance to identify top performers.
-    </p>
+    <ul class="point-list">
+        <li><strong>Ranking basis:</strong> Bayesian score + seasonal review signal.</li>
+        <li><strong>Filter:</strong> Select season and recipe type.</li>
+        <li><strong>Table columns:</strong> Rank, ID, Name, Score, Reviews (season).</li>
+        <li><strong>Use:</strong> Surface seasonally resonant recipes.</li>
+    </ul>
     """, unsafe_allow_html=True)
 
     # Selection filters
     col3, col4 = st.columns(2)
     with col3:
-        season = st.selectbox("Select Season:", top20_df['Season'].unique())
+        season = st.selectbox("Select Season:", sorted(top20_df['Season'].unique()))
     with col4:
-        recipe_type = st.selectbox("Select Recipe Type:", ["plat", "dessert", "boisson"])
+        recipe_type_display = st.selectbox("Select Recipe Type:", sorted(top20_df.get('recipe_type_en', top20_df['recipe_type']).unique()))
 
-    # Filter data
-    top20_filtered = top20_df[(top20_df['Season'] == season) & (top20_df['recipe_type'] == recipe_type)]
+    # Filter data using English layer if present
+    if 'recipe_type_en' in top20_df.columns:
+        top20_filtered = top20_df[(top20_df['Season'] == season) & (top20_df['recipe_type_en'] == recipe_type_display)]
+    else:
+        # Fallback to original types
+        inv_map = {'main': 'plat', 'drink': 'boisson', 'dessert': 'dessert'}
+        underlying = inv_map.get(recipe_type_display, recipe_type_display)
+        top20_filtered = top20_df[(top20_df['Season'] == season) & (top20_df['recipe_type'] == underlying)]
 
     # Display results
     if not top20_filtered.empty:
-        st.subheader(f"Top 20 {top20_filtered['recipe_type'].iloc[0]} recipes in {season}")
+        display_label = top20_filtered.get('recipe_type_en', top20_filtered['recipe_type']).iloc[0]
+        st.subheader(f"Top {len(top20_filtered)} {display_label} recipes in {season}")
         
         display_columns = ['Ranking', 'Recipe_ID', 'Name', 'Bayesian_Score', 'Season_Reviews']
         
@@ -522,27 +588,22 @@ elif page == "Seasonal Rankings":
 # -------------------------------
 elif page == "Recipe Lookup":
     st.markdown('<h2 class="section-header">Individual Recipe Analysis</h2>', unsafe_allow_html=True)
-    
     st.markdown("""
-    <p class="description-text">
-        Search for specific recipes by ID to view detailed classification information, 
-        confidence scores, and metadata. Useful for verifying classification results 
-        and understanding algorithm decisions.
-    </p>
+    <ul class="point-list">
+        <li><strong>Input:</strong> Numeric recipe ID.</li>
+        <li><strong>Returns:</strong> Type, confidence, submission date, description.</li>
+        <li><strong>Purpose:</strong> Spot‑check classification validity.</li>
+    </ul>
     """, unsafe_allow_html=True)
 
     recipe_id = st.text_input("Enter Recipe ID:")
-
     if recipe_id:
         try:
             recipe_id_int = int(recipe_id)
             recipe_found = df[df['ID'] == recipe_id_int]
-            
             if not recipe_found.empty:
                 recipe_info = recipe_found.iloc[0]
                 st.success(f"Recipe found: {recipe_info.get('Name', 'Name not available')}")
-                
-                # Display information in cards
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown(f"""
@@ -551,14 +612,12 @@ elif page == "Recipe Lookup":
                         <h3>{recipe_info.get('Type', 'N/A')}</h3>
                     </div>
                     """, unsafe_allow_html=True)
-                    
                     st.markdown(f"""
                     <div class="metric-card">
                         <h4>Recipe ID</h4>
                         <h3>{recipe_info.get('ID', 'N/A')}</h3>
                     </div>
                     """, unsafe_allow_html=True)
-                    
                     if 'Confidence_Percentage' in df.columns:
                         st.markdown(f"""
                         <div class="metric-card">
@@ -566,7 +625,6 @@ elif page == "Recipe Lookup":
                             <h3>{recipe_info.get('Confidence_Percentage', 'N/A'):.1f}%</h3>
                         </div>
                         """, unsafe_allow_html=True)
-                
                 with col2:
                     st.markdown(f"""
                     <div class="metric-card">
@@ -574,7 +632,6 @@ elif page == "Recipe Lookup":
                         <h3>{recipe_info.get('Submission_Date', 'N/A')}</h3>
                     </div>
                     """, unsafe_allow_html=True)
-                    
                     if 'Description' in recipe_info.index and pd.notna(recipe_info['Description']):
                         st.markdown(f"""
                         <div class="metric-card">
@@ -584,6 +641,37 @@ elif page == "Recipe Lookup":
                         """, unsafe_allow_html=True)
             else:
                 st.error("No recipe found with this ID")
-                
         except ValueError:
-            st.error("Please enter a valid numeric ID")
+            st.error("Please enter a valid numeric ID")
+
+elif page == "Analytical Quadrants":
+    section_header("Analytical Synopsis & Quadrants")
+    info_box("Purpose", "We estimate effort (steps + ingredients + name length) and popularity (Bayesian mean rating) then split recipes into four groups using medians: Easy Gems (low effort, high popularity), Ambitious Masterpiece (high effort, high popularity), Unloved Basic (low effort, low popularity), Reconsider (high effort, low popularity). This helps quickly see where effort matches user interest.")
+    info_box("Method", "Effort is a 0–10 heuristic; Bayesian mean shrinks low-review recipes toward their type average using kb. Medians (not averages) define quadrant boundaries to stay robust against outliers.")
+    render_insights_and_quadrants(df)
+
+elif page == "Correlation Matrix":
+    section_header("Ordered Correlation Matrix")
+    render_correlation(df)
+    info_box("Reading", "Each cell shows Spearman correlation (monotonic relationship) between numeric features. We remove IDs and constant columns. Ordering by |corr(bayes_mean)| highlights features most associated with popularity. Values near 0 mean weak relation; strong colors do NOT imply causation.")
+
+elif page == "Methodology":
+    section_header("Methodology & Bayesian Parameters")
+    st.markdown("""
+    <div class='info-box formulas-box'>
+        <h4>Formulas</h4>
+        <p><strong>Q-Score</strong> = (valid_avg_rating × nb_valid_ratings + season_avg × kb) / (nb_valid_ratings + kb)<br>
+        <strong>Pop_Weight</strong> = (1 - exp(-nb_season_reviews / kpop))^gamma<br>
+        <strong>Final_Score</strong> = Q-Score × Pop_Weight</p>
+    </div>
+    """, unsafe_allow_html=True)
+    try:
+        from cooking_assistant import config as cfg
+        bp = cfg.BAYESIAN_PARAMS
+        params_df = pd.DataFrame([
+            {"Type": t, "kb": v["kb"], "kpop": v["kpop"], "gamma": v["gamma"]} for t, v in bp.items()
+        ])
+        st.dataframe(params_df, use_container_width=True)
+        info_box("Rationale", "Parameters kept constant across seasons due to stable review distribution and comparable medians; seasonal adjustment already captured via season_avg in Q-Score.")
+    except Exception as e:
+        st.warning(f"Unable to load BAYESIAN_PARAMS: {e}")

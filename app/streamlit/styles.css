@@ -1,0 +1,99 @@
+/* Cooking Assistant Streamlit custom styles (non-destructive) */
+:root {
+  --ca-bg: #1e1e1e;
+  --ca-panel: #262626;
+  --ca-accent: #d13438;
+  --ca-accent-soft: #c44a42;
+  --ca-border: #3a3a3a;
+  --ca-text: #f4f4f4;
+  --ca-muted: #bbbbbb;
+  --ca-green: #2ca36c;
+  --ca-yellow: #f2c14e;
+  --ca-red: #d96c6c;
+}
+
+body, .stApp { background: var(--ca-bg); color: var(--ca-text); }
+/* Slightly warmer dark background to reduce harsh contrast with default grey */
+.stApp { background: linear-gradient(180deg,#222222 0%, #1c1c1c 100%); }
+
+.section-header { font-size: 1.55rem; font-weight:600; margin: 1.6rem 0 0.9rem; padding-left:0.65rem; border-left:4px solid var(--ca-accent); text-decoration: underline; text-underline-offset:4px; }
+
+.info-box { background: var(--ca-panel); border:1px solid var(--ca-border); padding:0.9rem 1rem; border-radius:8px; margin:0.6rem 0 1.1rem; }
+.info-box h4 { margin:0 0 0.4rem; font-size:1.05rem; font-weight:600; color: var(--ca-accent); text-decoration: underline; text-underline-offset:3px; }
+.info-box p { margin:0 0 0.55rem; font-size:1.05rem; line-height:1.5; }
+.info-box.large-text p { font-size:1.0rem; }
+ul.info-points { margin:0.4rem 0 0.2rem 1.1rem; padding:0; }
+ul.info-points li { margin:0.25rem 0; font-size:0.95rem; line-height:1.35; }
+ul.info-points li strong { color: var(--ca-accent); }
+.info-box.formulas-box p, .info-box.reading-box p { font-size:1.02rem; }
+.info-box.formulas-box ul.info-points li, .info-box.reading-box ul.info-points li { font-size:1.02rem; }
+
+.insight-panel { background: var(--ca-panel); border:1px solid var(--ca-border); padding:0.8rem 1rem; border-radius:8px; }
+.insight-item { font-size:0.95rem; margin:0.3rem 0; color: var(--ca-text); }
+
+.badge { display:inline-block; background: var(--ca-accent-soft); color:#fff; padding:2px 8px; border-radius:12px; font-size:0.65rem; margin-left:4px; }
+
+.quadrant-legend { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem; }
+.quadrant-tag { background: var(--ca-border); padding:5px 9px; border-radius:6px; font-size:0.75rem; }
+
+.metric-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:0.75rem; margin-top:0.8rem; }
+.metric-box { background: var(--ca-panel); border:1px solid var(--ca-border); padding:0.6rem 0.75rem; border-radius:6px; }
+.metric-box .label { font-size:0.65rem; text-transform:uppercase; color:var(--ca-muted); letter-spacing:0.05em; }
+.metric-box .value { font-size:1.1rem; font-weight:600; }
+.metric-box .delta { font-size:0.7rem; color:var(--ca-green); }
+
+/* Non-destructive overrides: keep Streamlit defaults working */
+/* Hide default fullscreen button in custom panels */
+.info-box [data-testid="StyledFullScreenButton"], .insight-panel [data-testid="StyledFullScreenButton"] { display:none; }
+
+/* Cards & metrics from main app */
+.home-card, .metric-card { background: var(--ca-panel); border:1px solid var(--ca-border); border-radius:10px; padding:1.05rem 1.1rem; }
+.metric-card { border-left:4px solid var(--ca-accent); }
+.metric-card h3, .metric-card h4 { margin:0 0 0.35rem; }
+.metric-card h2 { margin:0; font-size:1.6rem; }
+
+/* Sidebar navigation */
+div[data-testid="stSidebar"] { background: #181818; }
+div[data-testid="stSidebar"] .nav-header { font-size:0.85rem; font-weight:600; letter-spacing:0.05em; color: var(--ca-muted); text-transform:uppercase; margin:0.75rem 0 0.5rem; }
+div[data-testid="stSidebar"] .stButton>button { background:#262626; border:1px solid #333; border-radius:8px; padding:8px 10px; color:var(--ca-text); font-size:0.85rem; text-align:left; transition:background .2s,border .2s, transform .2s; }
+div[data-testid="stSidebar"] .stButton>button:hover { background:var(--ca-accent); border-color:var(--ca-accent); transform:translateX(3px); }
+div[data-testid="stSidebar"] .stButton>button:focus { outline:2px solid var(--ca-accent-soft); }
+
+/* DataFrame tweaks */
+.stDataFrame div{ color: var(--ca-text) !important; }
+.stDataFrame [data-testid="stHeading"], .stDataFrame thead, .stDataFrame tbody td, .stDataFrame tbody th { color: var(--ca-text) !important; }
+/* Axis tick labels, legend text, generic labels */
+.plotly-container text { fill: var(--ca-text) !important; }
+/* Streamlit form labels & select placeholders */
+label, .stMarkdown p, .stRadio, .stSelectbox div[data-baseweb="select"] { color: var(--ca-text) !important; }
+/* Sidebar nav header brighten */
+div[data-testid="stSidebar"] .nav-header { color: #e5e5e5; }
+/* Generic small grey texts (help/tooltips) */
+span, small { color: #e0e0e0; }
+
+/* Plotly background harmonization */
+.css-1sbw7qj, .plotly-container { background: var(--ca-panel) !important; }
+
+/* Scrollbar subtle styling */
+::-webkit-scrollbar { width:10px; }
+::-webkit-scrollbar-track { background:#1e1e1e; }
+::-webkit-scrollbar-thumb { background:#3a3a3a; border-radius:6px; }
+::-webkit-scrollbar-thumb:hover { background:#4a4a4a; }
+
+/* Responsive text helpers */
+.description-text { font-size:1.05rem; color:#f9f9f9; }
+.main-header { font-size:2.2rem; font-weight:600; text-align:center; margin:0 0 1.3rem; padding-bottom:0.6rem; border-bottom:2px solid var(--ca-border); }
+
+/* Accessibility: focus ring for keyboard navigation */
+button:focus, a:focus { outline:2px solid var(--ca-yellow); outline-offset:2px; }
+
+/* Quadrant tags improved contrast */
+.quadrant-tag { background: #2f2f2f; border:1px solid #404040; }
+
+/* Bullet list aesthetics */
+ul.point-list { margin:0.4rem 0 1rem 1.1rem; padding:0; }
+ul.point-list li { margin:0.38rem 0; font-size:1.05rem; color:var(--ca-text); }
+ul.point-list li strong { color: var(--ca-accent); }
+
+/* Improve contrast for description text (single declaration retained above) */
+

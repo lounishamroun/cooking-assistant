@@ -1,8 +1,9 @@
-"""
-CSV DATA LOADING
+"""CSV loading utilities for core datasets.
 
-Module to load CSV files (recipes, interactions, classifications).
-Based on scripts/data_loader_preparation.py
+Centralized helpers to retrieve the most recent timestamped raw recipe and
+interaction files and the classified recipe file produced by the
+multi‑signal classifier. All functions return new DataFrames and avoid
+in-place mutation.
 """
 
 import pandas as pd
@@ -20,17 +21,22 @@ from ..config import (
 
 
 def load_recipes(data_dir: Path = RAW_DATA_DIR) -> pd.DataFrame:
-    """
-    Loads the raw recipes file (RAW_recipes_*.csv).
-    
-    Args:
-        data_dir: Directory containing raw data
-        
-    Returns:
-        DataFrame with recipes
-        
-    Raises:
-        FileNotFoundError: If no recipes file is found
+    """Load the latest raw recipes CSV matching ``RAW_recipes*``.
+
+    Parameters
+    ----------
+    data_dir : Path, default ``RAW_DATA_DIR``
+        Directory containing raw timestamped files.
+
+    Returns
+    -------
+    pd.DataFrame
+        Raw recipes data.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no matching file is found.
     """
     recipes_file = get_latest_file_with_prefix(RAW_RECIPES_PREFIX, data_dir)
     
@@ -42,17 +48,22 @@ def load_recipes(data_dir: Path = RAW_DATA_DIR) -> pd.DataFrame:
 
 
 def load_interactions(data_dir: Path = RAW_DATA_DIR) -> pd.DataFrame:
-    """
-    Loads the interactions/reviews file (RAW_interactions_*.csv).
-    
-    Args:
-        data_dir: Directory containing raw data
-        
-    Returns:
-        DataFrame with interactions (reviews)
-        
-    Raises:
-        FileNotFoundError: If no interactions file is found
+    """Load the latest raw interactions CSV matching ``RAW_interactions*``.
+
+    Parameters
+    ----------
+    data_dir : Path, default ``RAW_DATA_DIR``
+        Directory containing raw timestamped files.
+
+    Returns
+    -------
+    pd.DataFrame
+        User–recipe interaction records (ratings + metadata).
+
+    Raises
+    ------
+    FileNotFoundError
+        If no matching file is found.
     """
     interactions_file = get_latest_file_with_prefix(RAW_INTERACTIONS_PREFIX, data_dir)
     
@@ -64,17 +75,22 @@ def load_interactions(data_dir: Path = RAW_DATA_DIR) -> pd.DataFrame:
 
 
 def load_classified_recipes(file_path: Path = RECIPES_CLASSIFIED_FILE) -> pd.DataFrame:
-    """
-    Loads the classified recipes file (with 'type' column).
-    
-    Args:
-        file_path: Path to the classified recipes file
-        
-    Returns:
-        DataFrame with classified recipes
-        
-    Raises:
-        FileNotFoundError: If the file doesn't exist
+    """Load the classifier output containing the ``type`` column.
+
+    Parameters
+    ----------
+    file_path : Path, default ``RECIPES_CLASSIFIED_FILE``
+        Location of the persisted classification output.
+
+    Returns
+    -------
+    pd.DataFrame
+        Recipes annotated with a final predicted type.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
     """
     if not file_path.exists():
         raise FileNotFoundError(
@@ -90,14 +106,17 @@ def load_classified_recipes(file_path: Path = RECIPES_CLASSIFIED_FILE) -> pd.Dat
 
 
 def load_data(data_dir: Path = RAW_DATA_DIR) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Loads both recipes and interactions.
-    
-    Args:
-        data_dir: Directory containing the data
-        
-    Returns:
-        Tuple (recipes_df, interactions_df)
+    """Convenience wrapper returning recipes and interactions DataFrames.
+
+    Parameters
+    ----------
+    data_dir : Path, default ``RAW_DATA_DIR``
+        Directory in which raw timestamped files live.
+
+    Returns
+    -------
+    (pd.DataFrame, pd.DataFrame)
+        ``(recipes_df, interactions_df)``.
     """
     print("=" * 80)
     print("LOADING DATA")

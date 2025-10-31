@@ -1,10 +1,12 @@
-"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                     DATA PREPROCESSING AND MERGING                           ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+"""Data merging and seasonal enrichment.
 
-Module to merge recipes with interactions and add seasons.
-Based on scripts/data_loader_preparation.py
+This module provides a single helper ``prepare_merged_data`` that joins the
+recipes dataset with interactions, parses review dates safely, adds a
+season label (astronomical seasons) and extracts the review year.
+
+The function performs lightweight validation of required columns and can
+emit progress information for exploratory runs. It never mutates the input
+DataFrames in-place.
 """
 
 import pandas as pd
@@ -18,16 +20,33 @@ def prepare_merged_data(
     interactions_df: pd.DataFrame,
     verbose: bool = True
 ) -> pd.DataFrame:
-    """
-    Merges recipes with interactions and adds the 'season' column.
-    
-    Args:
-        recipes_df: DataFrame of recipes (must contain 'id', 'name', 'type')
-        interactions_df: DataFrame of interactions (must contain 'recipe_id', 'rating', 'date')
-        verbose: Display progress information
-        
-    Returns:
-        Merged DataFrame with columns: recipe_id, name, type, rating, date, season, year
+    """Merge recipes with interactions and enrich with seasonal metadata.
+
+    The merged output contains one row per interaction joined to its
+    corresponding recipe attributes. Review timestamps are converted to
+    ``datetime64[ns]`` (coercing invalid values to ``NaT``), then mapped
+    to seasons via :func:`cooking_assistant.analysis.seasonal.get_season_from_date`.
+
+    Parameters
+    ----------
+    recipes_df : pd.DataFrame
+        Must include columns ``id``, ``name``, ``type``.
+    interactions_df : pd.DataFrame
+        Must include columns ``recipe_id``, ``rating``, ``date``.
+    verbose : bool, default True
+        When True, prints progress and distribution summaries.
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns (at minimum): ``recipe_id``, ``name``, ``type``, ``rating``,
+        ``date``, ``date_parsed``, ``season``, ``year``. Additional columns
+        from the interactions input are preserved.
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing in either input DataFrame.
     """
     if verbose:
         print("DATA PREPARATION")
