@@ -545,33 +545,6 @@ print(f"Exported {len(recipes_classified)} recipes to {output_file}")
 print("\nFirst 5 rows of the exported data:")
 print(recipes_classified.head())
 
-
-# IV - Progress Bar Addition
-# Let's add progress bars to the main processing loops to show progress during the runtime
-
-# First, let's wrap the structural feature computation with a progress bar
-print("\n=== Computing structural features ===")
-tqdm.pandas(desc="Processing structural features")
-
-# For the NLP processing loop, add progress bar
-print("\n=== Processing NLP features ===")
-P_nlp_logits = np.empty((len(df), 3), float)
-H_strong = np.empty((len(df), 3), int)
-H_soft   = np.empty((len(df), 3), int)
-
-for i, row in tqdm(df.iterrows(), total=len(df), desc="Computing NLP features"):
-    lg, hs, hf = _nlp_weighted_logits(row)
-    P_nlp_logits[i, :] = lg
-    H_strong[i, :] = hs
-    H_soft[i, :] = hf
-
-# For the final arbitration loop, add progress bar
-print("\n=== Final classification arbitration ===")
-final_types, final_confs = [], []
-
-for i, row in tqdm(df.iterrows(), total=len(df), desc="Final classification"):
-    # ... (rest of the arbitration logic remains the same)
-    # We just wrap the existing loop with tqdm for progress tracking
-    pass
-
-print("\n=== Classification completed successfully! ===")
+# NOTE: Progress-bar instrumentation removed in merged version to avoid re-running
+# classification logic redundantly. If runtime feedback is desired, integrate
+# tqdm directly into the original loops instead of duplicating them here.

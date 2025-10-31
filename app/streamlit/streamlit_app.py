@@ -1,138 +1,33 @@
-import streamlit as st
+"""Unified Streamlit application.
+
+This file replaces conflicted merge versions, providing a clean, resilient
+dashboard for recipe classification analysis.
+"""
+
+import os
 import pandas as pd
 import numpy as np
+import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
-import os
 
 
-# Custom CSS for dark theme and professional styling
-st.markdown("""
-<style>
-    .stApp {
-        background-color: #1e1e1e;
-        color: #ffffff;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    .main-header {
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 2.5rem;
-        font-weight: 600;
-        color: #ffffff;
-        text-align: center;
-        margin-bottom: 2rem;
-        border-bottom: 2px solid #444444;
-        padding-bottom: 1rem;
-    }
-    
-    .section-header {
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 1.8rem;
-        font-weight: 500;
-        color: #e0e0e0;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid #0078d4;
-        padding-left: 1rem;
-    }
-    
-    .description-text {
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 1rem;
-        line-height: 1.6;
-        color: #cccccc;
-        margin-bottom: 1.5rem;
-    }
-    
-    .sidebar .sidebar-content {
-        background-color: #2d2d2d;
-    }
-    
-    /* Hide default button styling */
-    .stButton > button {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        width: 100% !important;
-        text-align: left !important;
-    }
-    
-    /* Custom sidebar button styling */
-    .element-container .stButton > button {
-        background: linear-gradient(135deg, #2D2D2D 0%, #3D3D3D 100%) !important;
-        border: 1px solid #4A4A4A !important;
-        border-radius: 8px !important;
-        padding: 12px 16px !important;
-        margin: 4px 0 !important;
-        color: white !important;
-        font-weight: 500 !important;
-        transition: all 0.3s ease !important;
-        text-align: left !important;
-        width: 100% !important;
-    }
-    
-    .element-container .stButton > button:hover {
-        background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%) !important;
-        border-color: #0078d4 !important;
-        transform: translateX(4px) !important;
-        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3) !important;
-    }
-    
-    .element-container .stButton > button:focus {
-        background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%) !important;
-        border-color: #0078d4 !important;
-        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4) !important;
-    }
-    
-    /* Special styling for Home button */
-    div[data-testid="stSidebar"] .element-container:first-of-type .stButton > button {
-        background: linear-gradient(135deg, #d13438 0%, #b12a35 100%) !important;
-        border: 2px solid #d13438 !important;
-        border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        font-size: 24px !important;
-        margin: 0 auto 20px auto !important;
-        display: block !important;
-        box-shadow: 0 4px 12px rgba(209, 52, 56, 0.3) !important;
-    }
-    
-    div[data-testid="stSidebar"] .element-container:first-of-type .stButton > button:hover {
-        background: linear-gradient(135deg, #e63946 0%, #d13438 100%) !important;
-        transform: scale(1.1) !important;
-        box-shadow: 0 6px 20px rgba(209, 52, 56, 0.5) !important;
-    }
-    
-    .home-card {
-        background-color: #2d2d2d;
-        padding: 2rem;
-        border-radius: 10px;
-        border: 1px solid #444444;
-        margin: 1rem 0;
-    }
-    
-    .metric-card {
-        background-color: #333333;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #0078d4;
-        margin: 0.5rem 0;
-    }
-    
-    .stSelectbox > div > div {
-        background-color: #333333;
-        color: #ffffff;
-    }
-    
-    .stTextInput > div > div > input {
-        background-color: #333333;
-        color: #ffffff;
-        border: 1px solid #555555;
-    }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+        .stApp {background-color:#1e1e1e;color:#ffffff;font-family:'Segoe UI',sans-serif;}
+        .main-header {font-size:2.4rem;font-weight:600;text-align:center;margin-bottom:1.5rem;border-bottom:2px solid #444;padding-bottom:.75rem;}
+        .section-header {font-size:1.6rem;font-weight:500;margin-top:1.5rem;margin-bottom:.75rem;border-left:4px solid #0078d4;padding-left:.75rem;}
+        .description-text {font-size:.95rem;line-height:1.55;color:#cccccc;margin-bottom:1.2rem;}
+        .home-card,.metric-card {background:#2d2d2d;border:1px solid #444;border-radius:10px;padding:1.25rem;margin:.75rem 0;}
+        .metric-card {border-left:4px solid #0078d4;}
+        div[data-testid="stSidebar"] .stButton>button {background:#2d2d2d;border:1px solid #4A4A4A;border-radius:8px;padding:10px 14px;margin:4px 0;color:#fff;font-weight:500;transition:.25s all;width:100%;text-align:left;}
+        div[data-testid="stSidebar"] .stButton>button:hover {background:#0078d4;border-color:#0078d4;transform:translateX(4px);}
+        div[data-testid="stSidebar"] .element-container:first-of-type .stButton>button {background:linear-gradient(135deg,#d13438,#b12a35);border:2px solid #d13438;border-radius:50%;width:60px;height:60px;font-size:24px;margin:0 auto 16px;display:block;}
+        .nav-header {font-size:19px;font-weight:600;margin-bottom:16px;text-align:center;border-bottom:2px solid #0078d4;padding-bottom:8px;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Page configuration
 st.set_page_config(
@@ -194,7 +89,7 @@ def _standardize_top20_columns(df: pd.DataFrame) -> pd.DataFrame:
         df['Bayesian_Score'] = pd.to_numeric(df['Bayesian_Score'], errors='coerce').round(2)
     return df
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_data():
     # Main classified recipes dataset.
     df = _safe_read_csv("data/interim/recipes_classified.csv")
@@ -244,51 +139,7 @@ def load_data():
 df, top20_df = load_data()
 
 # Enhanced Sidebar CSS
-st.markdown("""
-<style>
-    .nav-item {
-        background: linear-gradient(135deg, #2D2D2D 0%, #3D3D3D 100%);
-        border: 1px solid #4A4A4A;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin: 8px 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        color: white;
-        text-decoration: none;
-        display: block;
-        font-weight: 500;
-    }
-    
-    .nav-item:hover {
-        background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
-        border-color: #0078d4;
-        transform: translateX(4px);
-        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
-    }
-    
-    .nav-item.active {
-        background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
-        border-color: #0078d4;
-        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4);
-    }
-    
-    .nav-item i {
-        margin-right: 8px;
-        font-size: 16px;
-    }
-    
-    .nav-header {
-        color: #000000;
-        font-size: 20px;
-        font-weight: 600;
-        margin-bottom: 20px;
-        text-align: center;
-        border-bottom: 2px solid #0078d4;
-        padding-bottom: 10px;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Slimmed extra navigation CSS already applied above.
 
 # Initialize session state for navigation
 if 'selected_page' not in st.session_state:

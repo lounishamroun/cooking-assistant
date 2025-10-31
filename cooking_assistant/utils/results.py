@@ -194,20 +194,19 @@ def save_combined_results_by_type(
             final_df = pd.concat(combined_data, ignore_index=True)
             
             # Select and reorganize columns according to specifications
-            # Required columns: ranking, recipe_id, name, Q_Score_Bayesien, Pop_Weight, Final_Score, reviews_in_season, Saison
-            
-            # Rename the combined score column to Final_Score for clarity
+            # We harmonize naming to ensure downstream (Streamlit) robustness.
+            # Preferred final columns: ranking, recipe_id, name, Q_Score_Bayesien, Pop_Weight, Final_Score, reviews_in_season, Saison
             if 'Q_Score_Bayesien_Poids_popularité' in final_df.columns:
+                # Legacy combined score column name; create Final_Score
                 final_df['Final_Score'] = final_df['Q_Score_Bayesien_Poids_popularité']
             elif 'Score_Final' in final_df.columns:
                 final_df['Final_Score'] = final_df['Score_Final']
-            else:
-                # If no combined score, calculate from components
-                if 'Q_Score_Bayesien' in final_df.columns and 'Poids_Popularite' in final_df.columns:
-                    final_df['Final_Score'] = final_df['Q_Score_Bayesien'] * final_df['Poids_Popularite']
-            
-            # Rename Poids_Popularite to Pop_Weight for consistency
-            if 'Poids_Popularite' in final_df.columns:
+            elif 'Q_Score_Bayesien' in final_df.columns and 'Poids_Popularite' in final_df.columns:
+                # Compute combined score if only components exist
+                final_df['Final_Score'] = final_df['Q_Score_Bayesien'] * final_df['Poids_Popularite']
+
+            # Popularity weight rename
+            if 'Poids_Popularite' in final_df.columns and 'Pop_Weight' not in final_df.columns:
                 final_df['Pop_Weight'] = final_df['Poids_Popularite']
             
             # Select only the requested columns in specified order
