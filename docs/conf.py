@@ -25,6 +25,7 @@ release = 'v1'
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
 ]
@@ -33,6 +34,7 @@ autodoc_default_options = {
     "undoc-members": False,
     "show-inheritance": True,
 }
+autosummary_generate = True
 
 autodoc_typehints = "description"
 napoleon_google_docstring = False
