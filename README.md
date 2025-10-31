@@ -5,6 +5,8 @@
 
 [Documentation (GitHub Pages)](https://lounishamroun.github.io/cooking-assistant/) · [Classifier Justification](analysis_parameter_justification/README_food_type_classifier_justification.md) · [Bayesian Parameter Justification](analysis_parameter_justification/bayesian_parameters_docs_justification.md)
 
+**Live Demo (Streamlit Cloud):** _pending deployment_ → will appear here as soon as published.
+
 </div>
 
 ## 1. Quick Evaluation (Teacher / Reviewer)

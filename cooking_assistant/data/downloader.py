@@ -12,7 +12,19 @@ import pandas as pd
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
 from kagglehub.exceptions import DataCorruptionError
-from ..config import RAW_DATA_DIR
+
+# Support running as both package (python -m cooking_assistant.data.downloader)
+# and as a standalone script (python cooking_assistant/data/downloader.py).
+try:
+    from ..config import RAW_DATA_DIR  # package-relative
+except ImportError:
+    import sys
+    from pathlib import Path as _Path
+    # Add project root to path so absolute import works
+    _ROOT = _Path(__file__).resolve().parents[2]
+    if str(_ROOT) not in sys.path:
+        sys.path.insert(0, str(_ROOT))
+    from cooking_assistant.config import RAW_DATA_DIR  # absolute fallback
 
 HANDLE = "shuyangli94/food-com-recipes-and-user-interactions"
 RAW_DIR = RAW_DATA_DIR  # Use centralized configuration

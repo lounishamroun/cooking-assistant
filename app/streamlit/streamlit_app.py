@@ -31,8 +31,9 @@ except ImportError:  # running as a top-level script via `streamlit run`
 # Inline style block removed to rely solely on external stylesheet (`styles.css`) injected by inject_css().
 
 # Page configuration
+DEMO_MODE = os.getenv("DEMO_MODE", "0") == "1"
 st.set_page_config(
-    page_title="Recipe Classification Analysis",
+    page_title="Recipe Classification Analysis" + (" (Demo)" if DEMO_MODE else ""),
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -246,6 +247,9 @@ if page == "Home":
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+    if DEMO_MODE:
+        st.info("Demo mode enabled: heavy pipeline regeneration disabled. Run locally with DEMO_MODE=0 to execute full data processing.")
     
     # Key metrics
     col1, col2, col3, col4 = st.columns(4)
