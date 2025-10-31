@@ -9,7 +9,7 @@
 
 </div>
 
-## 1. Teacher Quickstart (Evaluation)
+## 1. Quickstart (Evaluation)
 Fastest path using pre-generated processed CSVs (no need to regenerate heavy data). Artifacts consumed by the demo are the canonical `*_latest.csv` files; timestamped ones preserve history.
 
 ```bash
