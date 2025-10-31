@@ -5,12 +5,12 @@
 
 [Documentation (GitHub Pages)](https://lounishamroun.github.io/cooking-assistant/) · [API Reference](https://lounishamroun.github.io/cooking-assistant/reference.html) · [Classifier Justification](analysis_parameter_justification/README_food_type_classifier_justification.md) · [Bayesian Parameter Justification](analysis_parameter_justification/bayesian_parameters_docs_justification.md)
 
-**Live Demo (Streamlit Cloud):** _pending deployment_ → will appear here as soon as published.
+**Live Demo (Streamlit Cloud):** https://cooking-assistant.streamlit.app/
 
 </div>
 
-## 1. Quick Evaluation (Teacher / Reviewer)
-Fast path using pre-generated processed CSVs.
+## 1. Teacher Quickstart (Evaluation)
+Fastest path using pre-generated processed CSVs (no need to regenerate heavy data). Artifacts consumed by the demo are the canonical `*_latest.csv` files; timestamped ones preserve history.
 
 ```bash
 git clone https://github.com/lounishamroun/cooking-assistant.git
@@ -19,6 +19,8 @@ poetry install
 poetry run streamlit run app/streamlit/streamlit_app.py
 ```
 Open http://localhost:8501.
+
+Integration status: pipeline + justification scripts produce stable `*_latest.csv` artifacts (season distribution & top_100) automatically; Streamlit falls back gracefully if enrichment missing.
 
 ## 2. Full Reproduction (Pipeline)
 Runs the end-to-end pipeline (download → classify → rank). Requires Kaggle access if downloader uses API.
