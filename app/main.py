@@ -21,6 +21,7 @@ import time
 import subprocess
 from pathlib import Path
 from datetime import datetime
+from utils.logger import get_logger
 
 # Add project to path
 project_root = Path(__file__).parent.parent
@@ -28,6 +29,8 @@ sys.path.insert(0, str(project_root))
 
 from cooking_assistant.data.downloader import main as download_data
 from scripts.top_recipe_rankings import main as calculate_rankings
+
+log = get_logger(__name__)
 
 
 def print_header():
@@ -167,7 +170,8 @@ def main():
     Returns:
         int: Exit code (0 = success, 1 = failure)
     """
-    print_header()
+    print_header()  # Keep original prints
+    log.info("Pipeline start")
     
     total_start = time.time()
     
@@ -178,7 +182,9 @@ def main():
         print_step(1, "DATA DOWNLOAD", 
                    "Retrieving datasets from Kaggle")
         
+        log.info("Step 1: Starting data download from Kaggle")
         if not execute_step(download_data, "Kaggle Download"):
+            log.error("Step 1 failed - data download")
             return 1
         
         # ══════════════════════════════════════════════════════════════════
@@ -187,7 +193,9 @@ def main():
         print_step(2, "RECIPE CLASSIFICATION", 
                    "ML analysis to determine type (plat, dessert, boisson)")
         
+        log.info("Step 2: Starting classification script")
         if not execute_script_step(run_classification_script, "ML Classification"):
+            log.error("Step 2 failed - classification script")
             return 1
         
         # ══════════════════════════════════════════════════════════════════
@@ -196,7 +204,9 @@ def main():
         print_step(3, "CALCULATE FINAL TOP 20", 
                    "Bayesian scores and generation of final CSVs")
         
+        log.info("Step 3: Calculating rankings")
         if not execute_step(calculate_rankings, "Rankings calculation"):
+            log.error("Step 3 failed - rankings calculation")
             return 1
         
         # ══════════════════════════════════════════════════════════════════
@@ -205,11 +215,12 @@ def main():
         total_elapsed = time.time() - total_start
         total_minutes = int(total_elapsed // 60)
         total_seconds = int(total_elapsed % 60)
-        
+
         print("\n" + "=" * 80)
         print("COMPLETE PIPELINE FINISHED SUCCESSFULLY!")
         print("=" * 80)
-        
+        log.info("Pipeline completed successfully")
+
         print(f"\nGENERATED RESULTS:")
         print(f"Folder: data/processed/")
         print(f"Files:")
@@ -217,22 +228,24 @@ def main():
         print(f"   • top20_dessert_for_each_season.csv   (80 recipes)")  
         print(f"   • top20_boisson_for_each_season.csv   (80 recipes)")
         print(f"Total: 240 recipes analyzed")
-        
+
         print(f"\nTOTAL TIME: {total_minutes}m {total_seconds}s")
         print(f"End: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        
+
         print(f"\nYour data is ready for analysis!")
         print("=" * 80)
-        
+
         return 0
         
     except KeyboardInterrupt:
         print(f"\n\nPipeline interrupted by user")
+        log.warning("Pipeline interrupted by user (KeyboardInterrupt)")
         return 1
         
     except Exception as e:
         print(f"\n\nFatal error in pipeline:")
         print(f"   {str(e)}")
+        log.exception("Fatal error in pipeline")
         return 1
 
 

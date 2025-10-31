@@ -18,6 +18,9 @@ from sklearn.preprocessing import LabelEncoder
 import glob
 import os
 from tqdm import tqdm
+from utils.logger import get_logger
+
+log = get_logger(__name__)
 
 # Progress bars are always enabled (no environment flags needed).
 
@@ -36,11 +39,16 @@ def latest_csv_with_prefix(prefix: str, directory: Path = RAW_DIR) -> Path:
 
 
 # Find the CSV file that starts with RAW_recipes in the data/raw directory
-csv_file = latest_csv_with_prefix('RAW_recipes')
-if not os.path.exists(csv_file):
-    raise FileNotFoundError(f"Could not find {csv_file}. Please ensure the RAW_recipes.csv file is in the data/raw/ folder.")
-df = pd.read_csv(csv_file)
-print(f"Successfully loaded data from: {csv_file}")
+try:
+    csv_file = latest_csv_with_prefix('RAW_recipes')
+    if not os.path.exists(csv_file):
+        raise FileNotFoundError(f"Could not find {csv_file}. Please ensure the RAW_recipes.csv file is in the data/raw/ folder.")
+    df = pd.read_csv(csv_file)
+    print(f"Successfully loaded data from: {csv_file}")  # keep print
+    log.info(f"Loaded raw recipes file: {csv_file}")
+except Exception as e:
+    log.exception("Failed loading raw recipes file")
+    raise
 
 # II - Data Processing & Feature Engineering
 
@@ -215,6 +223,7 @@ def _conf_struct_from_probs(probs, row):
 # application
 P_struct = np.empty((len(df),3), float)
 types_s, confs_s = [], []
+log.info("Starting structural classification phase")
 for i, row in tqdm(df.iterrows(), total=len(df), desc="Structural"):
     lg = _struct_logits(row); pb = _softmax(lg)
     P_struct[i, :] = pb
@@ -381,6 +390,7 @@ P_nlp_logits = np.empty((len(df), 3), float)
 H_strong = np.empty((len(df), 3), int)
 H_soft   = np.empty((len(df), 3), int)
 
+log.info("Starting NLP scoring phase")
 for i, row in tqdm(df.iterrows(), total=len(df), desc="NLP scoring"):
     lg, hs, hf = _nlp_weighted_logits(row)
     P_nlp_logits[i, :] = lg

@@ -1937,6 +1937,17 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-json-logger"
+version = "2.0.7"
+description = "A python library adding a json log formatter"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "python-json-logger-2.0.7.tar.gz", hash = "sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c"},
+    {file = "python_json_logger-2.0.7-py3-none-any.whl", hash = "sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd"},
+]
+
+[[package]]
 name = "pytokens"
 version = "0.2.0"
 description = "A Fast, spec compliant Python 3.13+ tokenizer that runs on older Pythons."
@@ -2752,7 +2763,11 @@ files = [
 [package.extras]
 watchmedo = ["PyYAML (>=3.10)"]
 
+[extras]
+docs = ["myst-parser", "sphinx"]
+logging-json = ["python-json-logger"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "dab4582f82e801d661051153038306f7c3e8d4dba0fd273298b65a79227e6fe4"
+content-hash = "61666e4cc78b88d80a028a5878c348f5d2add2b677d2f1f703589f1173a319d6"

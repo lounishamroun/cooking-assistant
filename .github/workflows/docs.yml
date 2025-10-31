@@ -1,4 +1,4 @@
-name: Docs
+name: Build and Deploy Sphinx Docs
 
 on:
   push:
@@ -11,13 +11,23 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
 
       - name: Install Poetry
         run: |
@@ -31,6 +41,7 @@ jobs:
       - name: Build Sphinx HTML
         run: |
           poetry run sphinx-build -b html docs docs/_build/html
+          echo "Sphinx build completed" >> $GITHUB_STEP_SUMMARY
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -38,4 +49,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_build/html
           force_orphan: true
-          cname: ''
+
+      - name: Deployment summary
+        run: echo "Docs deployed to gh-pages branch" >> $GITHUB_STEP_SUMMARY
