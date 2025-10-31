@@ -194,23 +194,30 @@ def save_combined_results_by_type(
             final_df = pd.concat(combined_data, ignore_index=True)
             
             # Select and reorganize columns according to specifications
-            # Required columns: ranking, recipe_id, name, Q_Score_Bayesien_Poids_popularité, reviews_in_season, Saison
+            # Required columns: ranking, recipe_id, name, Q_Score_Bayesien, Pop_Weight, Final_Score, reviews_in_season, Saison
             
-            # Create Score_Final column that combines Q_Score and Popularity Weight
-            if 'Score_Final' in final_df.columns:
-                final_df['Q_Score_Bayesien_Poids_popularité'] = final_df['Score_Final']
+            # Rename the combined score column to Final_Score for clarity
+            if 'Q_Score_Bayesien_Poids_popularité' in final_df.columns:
+                final_df['Final_Score'] = final_df['Q_Score_Bayesien_Poids_popularité']
+            elif 'Score_Final' in final_df.columns:
+                final_df['Final_Score'] = final_df['Score_Final']
             else:
-                # If no Score_Final, calculate from components
-                final_df['Q_Score_Bayesien_Poids_popularité'] = (
-                    final_df['Q_Score_Bayesien'] * final_df['Poids_Popularite']
-                )
+                # If no combined score, calculate from components
+                if 'Q_Score_Bayesien' in final_df.columns and 'Poids_Popularite' in final_df.columns:
+                    final_df['Final_Score'] = final_df['Q_Score_Bayesien'] * final_df['Poids_Popularite']
+            
+            # Rename Poids_Popularite to Pop_Weight for consistency
+            if 'Poids_Popularite' in final_df.columns:
+                final_df['Pop_Weight'] = final_df['Poids_Popularite']
             
             # Select only the requested columns in specified order
             columns_wanted = [
                 'rank_in_season',           # → ranking 
                 'recipe_id',                # → recipe_id
                 'name',                     # → name
-                'Q_Score_Bayesien_Poids_popularité',  # → Q_Score_Bayesien_Poids_popularité
+                'Q_Score_Bayesien',         # → Q_Score_Bayesien (individual quality score)
+                'Pop_Weight',               # → Pop_Weight (popularity weight)
+                'Final_Score',              # → Final_Score (combined score)
                 'reviews_in_season',        # → reviews_in_season
                 'season'                    # → Saison
             ]

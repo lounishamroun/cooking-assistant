@@ -538,7 +538,7 @@ df['conf_%'] = np.round(final_confs, 1)
 
 # III - Results export on desired features
 
-recipes_classified = df[['id', 'name', 'type', 'submitted']].copy()
+recipes_classified = df[['id', 'name', 'type', 'submitted', 'conf_%']].copy()
 output_file = INTERIM_DATA_DIR / 'recipes_classified.csv'
 recipes_classified.to_csv(output_file, index=False)
 print(f"Exported {len(recipes_classified)} recipes to {output_file}")
