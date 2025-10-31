@@ -227,14 +227,14 @@ st.sidebar.markdown('<div class="nav-header">📊 Analysis Types</div>', unsafe_
 
 # Navigation items (without Home)
 nav_items = [
+    ("🌈", "Seasonal Distribution", "Seasonal review share by recipe type"),
+    ("🌟", "Seasonal Rankings", "Top recipes by season"),
     ("🥧", "Distribution", "Recipe type distribution visualization"), 
     ("📈", "Confidence Analysis", "Classification confidence analysis"),
     ("📊", "Historical Trends", "Publication trends over time"),
-    ("🌟", "Seasonal Rankings", "Top recipes by season"),
     ("🔍", "Recipe Lookup", "Search individual recipes"),
     ("🧭", "Analytical Quadrants", "Effort vs popularity quadrants & insights"),
-    ("🧪", "Correlation Matrix", "Ordered correlation heatmap"),
-    ("🌈", "Seasonal Distribution", "Seasonal review share by recipe type")
+    ("🧪", "Correlation Matrix", "Ordered correlation heatmap")
 ]
 
 for icon, page_name, description in nav_items:
