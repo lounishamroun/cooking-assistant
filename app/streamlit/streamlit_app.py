@@ -90,6 +90,22 @@ def _standardize_top20_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Round score if present.
     if 'Bayesian_Score' in df.columns:
         df['Bayesian_Score'] = pd.to_numeric(df['Bayesian_Score'], errors='coerce').round(2)
+    # Ensure we have a Ranking column: compute descending score order within (Season, recipe_type) groups
+    if 'Ranking' not in df.columns and 'Bayesian_Score' in df.columns:
+        # Fallback type column name(s)
+        type_col = 'recipe_type' if 'recipe_type' in df.columns else ('Type' if 'Type' in df.columns else None)
+        season_col = 'Season' if 'Season' in df.columns else None
+        if type_col and season_col:
+            df = df.sort_values([season_col, type_col, 'Bayesian_Score'], ascending=[True, True, False])
+            df['Ranking'] = (
+                df.groupby([season_col, type_col])
+                  .cumcount()
+                  .add(1)
+            )
+    # Guarantee deterministic ordering for downstream pages
+    ordering_cols = [c for c in ['Season', 'recipe_type', 'Ranking'] if c in df.columns]
+    if ordering_cols:
+        df = df.sort_values(ordering_cols)
     return df
 
 @st.cache_data(show_spinner=False)
@@ -579,9 +595,14 @@ elif page == "Seasonal Rankings":
         
         display_columns = ['Ranking', 'Recipe_ID', 'Name', 'Bayesian_Score', 'Season_Reviews']
         
+        display_df = top20_filtered[display_columns].copy()
+        if 'Ranking' in display_df.columns:
+            display_df = display_df.sort_values('Ranking', ascending=True)
+        else:
+            display_df = display_df.sort_values('Bayesian_Score', ascending=False)
         st.dataframe(
-            top20_filtered[display_columns].sort_values(by='Bayesian_Score', ascending=False), 
-            hide_index=True, 
+            display_df,
+            hide_index=True,
             use_container_width=True
         )
     else:
