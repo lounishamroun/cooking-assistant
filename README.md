@@ -3,7 +3,7 @@
 # Cooking Assistant
 **Season-aware recipe ranking, classification & interactive exploration**
 
-[Documentation (GitHub Pages)](https://lounishamroun.github.io/cooking-assistant/) · [Classifier Justification](analysis_parameter_justification/README_food_type_classifier_justification.md) · [Bayesian Parameter Justification](analysis_parameter_justification/bayesian_parameters_docs_justification.md)
+[Documentation (GitHub Pages)](https://lounishamroun.github.io/cooking-assistant/) · [API Reference](https://lounishamroun.github.io/cooking-assistant/reference.html) · [Classifier Justification](analysis_parameter_justification/README_food_type_classifier_justification.md) · [Bayesian Parameter Justification](analysis_parameter_justification/bayesian_parameters_docs_justification.md)
 
 **Live Demo (Streamlit Cloud):** _pending deployment_ → will appear here as soon as published.
 
@@ -81,6 +81,7 @@ Dual-phase (nutritional prototypes + lexical signals) with arbitration layer. Fu
 poetry run sphinx-build -b html docs docs/_build/html
 poetry run pytest -q
 ```
+If the GitHub Pages site looks empty right after a push, wait ~1–2 minutes (deployment job) then hard refresh (Ctrl+Shift+R). Ensure the link points to the repository root: `https://<user>.github.io/cooking-assistant/`.
 Coverage threshold: 90% (current > 90%).
 
 ## 9. Configuration
