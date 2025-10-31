@@ -3,15 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-projet_mangetamain documentation
-================================
+Redirect
+========
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+This file is retained only because Sphinx was bootstrapped with reST.
+The actual master document is `index.md` (MyST Markdown).
+You can safely ignore this page.
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 

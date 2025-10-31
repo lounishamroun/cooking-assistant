@@ -1,12 +1,17 @@
-# Projet Mangetamain
+# Cooking Assistant Documentation
 
 ```{toctree}
 :maxdepth: 2
+:caption: Guide
 
 getting-started
+methodology-classifier
+methodology-bayesian
+reference
 
-goal
+```
+<!-- Removed stray backticks -->
+Additional parameter justification lives in the repository directory:
+`analysis_parameter_justification/`.
 
 
-
-poetry run streamlit run app/streamlit.py
