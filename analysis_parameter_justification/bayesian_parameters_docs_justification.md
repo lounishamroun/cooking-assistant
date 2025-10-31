@@ -159,7 +159,7 @@ For **beverages (boissons)**, we use gamma = 0.7, applying a dampening effect th
 ## After analysis (How to include this set in overall calculation)
 
 After analysis, you have a set of Bayesian parameters for dishes, beverages and dessert. 
-Then, you just have to change the set of parameters in the **cooking_assistant/utils/config.py files** to adapt your analysis to a specific top recipes by season and by type. 
+Then, you just have to change the set of parameters in the **cooking_assistant/config.py** file to adapt your analysis to a specific top recipes by season and by type.
 
 
 

@@ -1,8 +1,10 @@
-"""
-CENTRAL PROJECT CONFIGURATION
+"""Central configuration module.
 
-Unified configuration for the recipe recommendation system.
-Contains all paths, Bayesian parameters, and project constants.
+Defines canonical paths, recipe type lists, season ordering, Bayesian
+parameter sets per type, and small helpers such as
+``get_latest_file_with_prefix`` plus a ``validate_config`` sanity check.
+All paths are resolved relative to the package root enabling portable
+execution inside or outside containers.
 """
 
 import os

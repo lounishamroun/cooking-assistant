@@ -1,0 +1,40 @@
+__pycache__/
+**/__pycache__/
+*.pyc
+.env
+.DS_Store
+.vscode/
+*.log
+*.logs
+logs/
+.venv/
+.ipynb_checkpoints/
+.streamlit/
+
+# Model & data artifacts
+*.pkl
+*.npz
+
+# Ignore large dataset CSV exports (raw/interim/processed) and analysis result dumps
+data/raw/*.csv
+data/interim/*.csv
+data/processed/*.csv
+analysis_parameter_justification/results_to_analyse/*.csv
+
+# Allow keeping small illustrative samples (place in data/samples/)
+!data/samples/*.csv
+
+# Ignore timestamped result dumps anywhere (e.g., RAW_interactions_20251031-160745.csv)
+*/*_20????????_*.csv
+
+# Ignore generated HTML docs build output
+docs/_build/
+
+# Logs
+*.log.*
+
+# Prevent committing coverage reports
+.coverage*
+
+# Poetry lock backup (if any) should not be committed
+poetry.lock.bak

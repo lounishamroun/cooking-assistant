@@ -18,7 +18,8 @@ from sklearn.preprocessing import LabelEncoder
 import glob
 import os
 from tqdm import tqdm
-import time
+
+# Progress bars are always enabled (no environment flags needed).
 
 # Import configuration
 from cooking_assistant.config import RAW_DATA_DIR, INTERIM_DATA_DIR
@@ -214,9 +215,9 @@ def _conf_struct_from_probs(probs, row):
 # application
 P_struct = np.empty((len(df),3), float)
 types_s, confs_s = [], []
-for i,row in df.iterrows():
+for i, row in tqdm(df.iterrows(), total=len(df), desc="Structural"):
     lg = _struct_logits(row); pb = _softmax(lg)
-    P_struct[i,:] = pb
+    P_struct[i, :] = pb
     types_s.append(CLASSES[int(np.argmax(pb))])
     confs_s.append(_conf_struct_from_probs(pb, row))
 df['p_struct_plat'], df['p_struct_dessert'], df['p_struct_boisson'] = P_struct.T
@@ -380,7 +381,7 @@ P_nlp_logits = np.empty((len(df), 3), float)
 H_strong = np.empty((len(df), 3), int)
 H_soft   = np.empty((len(df), 3), int)
 
-for i, row in df.iterrows():
+for i, row in tqdm(df.iterrows(), total=len(df), desc="NLP scoring"):
     lg, hs, hf = _nlp_weighted_logits(row)
     P_nlp_logits[i, :] = lg
     H_strong[i, :] = hs
@@ -442,7 +443,7 @@ if 'exception_hit' not in df.columns:
 
 final_types, final_confs = [], []
 
-for i, row in df.iterrows():
+for i, row in tqdm(df.iterrows(), total=len(df), desc="Arbitration"):
     # we read structural decision and confidence
     struct_label = row['type_struct']
     conf_struct  = float(row['conf_struct'])
@@ -538,40 +539,11 @@ df['conf_%'] = np.round(final_confs, 1)
 
 # III - Results export on desired features
 
-recipes_classified = df[['id', 'name', 'type', 'submitted']].copy()
+recipes_classified = df[['id', 'name', 'type', 'submitted', 'conf_%']].copy()
 output_file = INTERIM_DATA_DIR / 'recipes_classified.csv'
 recipes_classified.to_csv(output_file, index=False)
 print(f"Exported {len(recipes_classified)} recipes to {output_file}")
 print("\nFirst 5 rows of the exported data:")
 print(recipes_classified.head())
 
-
-# IV - Progress Bar Addition
-# Let's add progress bars to the main processing loops to show progress during the runtime
-
-# First, let's wrap the structural feature computation with a progress bar
-print("\n=== Computing structural features ===")
-tqdm.pandas(desc="Processing structural features")
-
-# For the NLP processing loop, add progress bar
-print("\n=== Processing NLP features ===")
-P_nlp_logits = np.empty((len(df), 3), float)
-H_strong = np.empty((len(df), 3), int)
-H_soft   = np.empty((len(df), 3), int)
-
-for i, row in tqdm(df.iterrows(), total=len(df), desc="Computing NLP features"):
-    lg, hs, hf = _nlp_weighted_logits(row)
-    P_nlp_logits[i, :] = lg
-    H_strong[i, :] = hs
-    H_soft[i, :] = hf
-
-# For the final arbitration loop, add progress bar
-print("\n=== Final classification arbitration ===")
-final_types, final_confs = [], []
-
-for i, row in tqdm(df.iterrows(), total=len(df), desc="Final classification"):
-    # ... (rest of the arbitration logic remains the same)
-    # We just wrap the existing loop with tqdm for progress tracking
-    pass
-
-print("\n=== Classification completed successfully! ===")
+# NOTE: Progress bars (tqdm) are integrated directly in the main loops.

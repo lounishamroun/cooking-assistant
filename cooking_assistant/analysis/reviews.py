@@ -1,8 +1,8 @@
-"""
-TOP RECIPES ANALYSIS BY NUMBER OF REVIEWS
+"""Top review volume analysis.
 
-Module to analyze most reviewed recipes by type and season.
-Based on scripts/top_reviews_analyzer.py
+Generates per type × season tables of the most reviewed recipes and derives
+median statistics used to justify Bayesian parameter calibration.
+Outputs are saved as timestamped CSV files intended for transparent audit.
 """
 
 import pandas as pd
@@ -20,19 +20,34 @@ def analyze_top_reviews_by_type_season(
     top_n: int = 100,
     verbose: bool = True
 ) -> Dict:
-    """
-    Analyzes top N recipes by number of reviews for each type and season.
-    Generates CSV files for parameter justification analysis.
-    
-    Args:
-        merged_df: Merged DataFrame with interactions and recipe types
-        recipes_df: DataFrame with recipe information
-        output_dir: Directory to save CSV files
-        top_n: Number of top recipes to extract (default: 100)
-        verbose: Display progress information
-        
-    Returns:
-        Dictionary with results organized by type and season
+    """Compile top-N most reviewed recipes per (type, season) and medians.
+
+    For each recipe type and season the function counts total reviews
+    (all interactions) and valid reviews (rating > 0), computes an average
+    rating over valid reviews, ranks recipes by total review volume, and
+    stores the top-N subset. Afterwards, a seasonal median review count
+    summary is generated and merged back for parameter justification.
+
+    Parameters
+    ----------
+    merged_df : pd.DataFrame
+        Interaction-level data joined to recipe metadata; must include
+        columns ``recipe_id``, ``rating``, ``season``, ``type``.
+    recipes_df : pd.DataFrame
+        Recipes catalog including columns ``id``, ``name``.
+    output_dir : str, default ``JUSTIFICATION_DIR``
+        Destination directory for the timestamped combined CSV.
+    top_n : int, default 100
+        Number of recipes retained per (type, season) combination.
+    verbose : bool, default True
+        When True prints progress and small summaries.
+
+    Returns
+    -------
+    Dict
+        Keys: ``combined_results`` (pd.DataFrame), ``by_type_season`` (nested
+        dict), ``median_analysis`` (pd.DataFrame or None), ``files_created``
+        (paths of generated artifacts).
     """
     if verbose:
         print(f"\n{'=' * 80}")

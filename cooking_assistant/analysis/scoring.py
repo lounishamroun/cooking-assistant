@@ -1,8 +1,7 @@
-"""
-BAYESIAN SCORES CALCULATION
+"""Bayesian scoring utilities.
 
-Module to calculate Bayesian Q-Scores and final scores.
-Based on scripts/score_calculator.py
+Implements the shrinkage quality score (Q-Score) and combined popularity
+adjusted final score used for seasonal top rankings.
 """
 
 import numpy as np
@@ -17,23 +16,24 @@ def calculate_bayesian_scores(
     season_mean: float,
     params: Dict[str, float]
 ) -> pd.DataFrame:
-    """
-    Calculates Bayesian Q-Score and final score for all recipes in a season.
-    
-    Steps:
-    1. Count number of reviews per recipe in the season
-    2. Calculate average rating per recipe (only rating > 0)
-    3. Calculate Bayesian Q-Score with regression to seasonal mean
-    4. Calculate popularity weight based on number of reviews
-    5. Multiply Q-Score × Weight to get Final Score
-    
-    Args:
-        season_df: DataFrame filtered for the season
-        season_mean: Average rating for this season (float)
-        params: Dictionary with kb, kpop, gamma
-        
-    Returns:
-        DataFrame with columns: recipe_id, Q_Score_Bayesien, Poids_Popularite, Score_Final, etc.
+    """Compute Q-Score, popularity weight and final score for a season slice.
+
+    Parameters
+    ----------
+    season_df : pd.DataFrame
+        Interaction rows for a single season (must include ``recipe_id`` and
+        ``rating`` columns).
+    season_mean : float
+        Baseline average rating for the season and recipe type.
+    params : Dict[str, float]
+        Bayesian parameters: ``kb`` (shrinkage strength), ``kpop`` (popularity
+        saturation scale), ``gamma`` (popularity exponent).
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per recipe with columns ``reviews_in_season``, ``avg_rating``,
+        ``valid_reviews``, ``Q_Score_Bayesien``, ``Poids_Popularite``, ``Score_Final``.
     """
     # Total number of reviews in this season (including rating=0)
     recipe_review_counts = season_df.groupby('recipe_id').size().reset_index(
@@ -90,20 +90,29 @@ def calculate_top_n_by_type(
     top_n: int = TOP_N,
     verbose: bool = True
 ) -> Dict[str, pd.DataFrame]:
-    """
-    Calculates top N recipes for a given type, by season.
-    
-    Args:
-        merged_df: Merged DataFrame with all data
-        recipes_df: Recipes DataFrame (to get names)
-        recipe_type: Recipe type ('plat', 'dessert', 'boisson')
-        params: Parameter dictionary (kb, kpop, gamma)
-        season_order: List of seasons in display order
-        top_n: Number of recipes in top (default: 20)
-        verbose: Display progress information
-        
-    Returns:
-        Dictionary {season: DataFrame} with top N by season
+    """Produce per-season top-N ranking for a given recipe type.
+
+    Parameters
+    ----------
+    merged_df : pd.DataFrame
+        Full merged interactions dataset including ``season`` & ``type``.
+    recipes_df : pd.DataFrame
+        Recipe catalog for name lookup (columns ``id``, ``name``).
+    recipe_type : str
+        One of the values in ``RECIPE_TYPES``.
+    params : Dict[str, float]
+        Bayesian parameter set for this recipe type.
+    season_order : List[str], default ``SEASON_ORDER``
+        Ordering used to iterate and display seasons.
+    top_n : int, default ``TOP_N``
+        Number of recipes kept per season after sorting by final score.
+    verbose : bool, default True
+        When True prints intermediate progress and summaries.
+
+    Returns
+    -------
+    Dict[str, pd.DataFrame]
+        Mapping season → DataFrame of top-N scored recipes.
     """
     if verbose:
         print(f"\n{'=' * 80}")

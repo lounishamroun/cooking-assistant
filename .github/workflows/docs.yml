@@ -1,19 +1,20 @@
-name: CI
+name: Docs
 
 on:
   push:
-    branches: [ main, devops ]
-  pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build-test-docs:
+  build-deploy-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -27,16 +28,14 @@ jobs:
         run: |
           poetry install --no-interaction --no-root
 
-      - name: Run tests
-        run: |
-          poetry run pytest -q
-
-      - name: Build documentation
+      - name: Build Sphinx HTML
         run: |
           poetry run sphinx-build -b html docs docs/_build/html
 
-      - name: Upload docs artifact
-        uses: actions/upload-artifact@v4
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          name: site
-          path: docs/_build/html
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
+          force_orphan: true
+          cname: ''

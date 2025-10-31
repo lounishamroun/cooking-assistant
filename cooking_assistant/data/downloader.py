@@ -1,7 +1,9 @@
-"""
-DATA DOWNLOADING
+"""Kaggle dataset downloader.
 
-Module to download data from Kaggle.
+Provides a timestamped acquisition routine for the Food.com dataset. If a
+timestamped copy (or base file) already exists the download step is skipped
+to keep runs idempotent. Automatically handles cache corruption by forcing
+redownload.
 """
 
 from pathlib import Path
