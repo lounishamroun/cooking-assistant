@@ -135,58 +135,6 @@ def render_quadrant_plot(df: pd.DataFrame):
         )
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ------------------------------------------------------------------
-# Correlation heatmap (ordered)
-# ------------------------------------------------------------------
-
-def render_correlation(df: pd.DataFrame, method: str = "spearman"):
-    numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
-    # Exclude identifier and synthetic flag columns from analytical correlation
-    exclude = {"ID", "id", "Effort_Is_Synthetic", "Bayes_Is_Synthetic", "Confidence_Is_Synthetic"}
-    numeric_cols = [c for c in numeric_cols if c not in exclude]
-    if len(numeric_cols) < 3:
-        st.info("Not enough numeric columns for correlation analysis.")
-        return
-    # Drop columns that are all NaN or constant (no variance → correlation undefined / trivial)
-    filtered = []
-    for c in numeric_cols:
-        col = pd.to_numeric(df[c], errors="coerce")
-        if col.nunique(dropna=True) > 1:  # retain columns with variance
-            filtered.append(c)
-    if len(filtered) < 2:
-        st.info("Numeric columns are constant; cannot compute meaningful correlations.")
-        return
-    corr = df[filtered].corr(method=method)
-    target = "bayes_mean" if "bayes_mean" in corr.columns else filtered[0]
-    order = corr[target].abs().sort_values(ascending=False).index.tolist()
-    corr_ordered = corr.loc[order, order]
-    fig = px.imshow(
-        corr_ordered,
-        text_auto=True,
-        aspect="auto",
-        color_continuous_scale="RdBu_r",
-        zmin=-1,
-        zmax=1,
-    )
-    fig.update_layout(title=f"Ordered Correlation Matrix ({method.capitalize()}) by |corr({target})|")
-    st.plotly_chart(fig, use_container_width=True)
-    # Explanatory panel tailored to actual displayed columns
-    shown_cols = ", ".join(corr_ordered.columns.tolist())
-    st.markdown(
-        f"""
-        <div class='info-box large-text'>
-            <h4>Reading the Matrix</h4>
-            <ul class='info-points'>
-                <li><strong>Scope:</strong> Columns analyzed → {shown_cols}</li>
-                <li><strong>Order:</strong> Sorted by |corr(bayes_mean)| (or target) to surface strongest links.</li>
-                <li><strong>Scale:</strong> -1 inverse · +1 direct · ~0 weak/no monotonic relation.</li>
-                <li><strong>Filtering:</strong> IDs, synthetic flags, constants removed to avoid noise.</li>
-                <li><strong>Caution:</strong> Correlation ≠ causation; rating compression may mute effects.</li>
-            </ul>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
 # ------------------------------------------------------------------
 # Public render bundle for easy integration
@@ -220,5 +168,4 @@ __all__ = [
     "render_insight_panel",
     "render_quadrant_plot",
     "render_insights_and_quadrants",
-    "render_correlation",
 ]

@@ -9,6 +9,29 @@
 
 </div>
 
+### TL;DR
+Classify recipes (4-phase structural + lexical arbitration), compute seasonal Bayesian rankings (quality shrinkage × popularity saturation), explore results in a Streamlit dashboard with canonical `*_latest.csv` artifacts for reproducible evaluation.
+
+### Primary Data Sources
+| File | Role |
+|------|------|
+| `RAW_recipes.csv` | Base recipe metadata & nutrition for classification features |
+| `RAW_interactions.csv` | User ratings & reviews powering popularity and seasonal review counts |
+| `recipes_classified.csv` | Output of multi-phase classifier (includes type + confidence) used by ranking |
+
+### Glossary (Key Symbols)
+| Term | Meaning |
+|------|---------|
+| `kb` | Shrinkage strength toward seasonal baseline |
+| `kpop` | Review count scale controlling saturation speed |
+| `gamma` | Curvature exponent amplifying popularity separation |
+| `season_avg` | Mean rating for (type, season) used as prior |
+| `valid_avg_rating` | Average rating excluding 0 (non-votes) |
+| `nb_valid_ratings` | Count of ratings > 0 for a recipe in season |
+| `nb_season_reviews` | Total reviews (incl. 0 ratings) for engagement measure |
+| `Pop_Weight` | Saturated popularity multiplier `(1 - exp(-reviews/kpop))^gamma` |
+| `Final` | Product of shrunk quality `Q` and popularity weight |
+
 ## 1. Quickstart (Evaluation)
 Fastest path using pre-generated processed CSVs (no need to regenerate heavy data). Artifacts consumed by the demo are the canonical `*_latest.csv` files; timestamped ones preserve history.
 
@@ -110,7 +133,23 @@ Detailed rationale: see [Bayesian Parameter Justification](analysis_parameter_ju
 ## 7. Classifier (Structural + NLP)
 Dual-phase (nutritional prototypes + lexical signals) with arbitration layer. Full methodology: [Classifier Justification](analysis_parameter_justification/README_food_type_classifier_justification.md).
 
-## 8. Documentation & Tests
+## 8. Evaluation Cheat Sheet (Scan in < 1 min)
+| Aspect | Summary |
+|--------|---------|
+| Objective | Seasonal ranking & classification with transparent, reproducible pipeline |
+| Classification | 4 phases: structural indices → prototype similarity → lexicon logits → arbitration (rule-based) |
+| Ranking Formula | `Q = (kb*season_avg + nb_valid_ratings*valid_avg_rating)/(kb+nb_valid_ratings)`; `Pop_Weight = (1 - exp(-reviews/kpop))^gamma`; `Final = Q * Pop_Weight` |
+| Shrinkage Rationale | Prevent early volatility; few ratings regress to seasonal baseline |
+| Popularity Curve | Saturating exponential avoids runaway advantage for very large review counts |
+| Data Quality | Exclude rating==0 from valid averages; canonical `*_latest.csv` artifacts for stable UI |
+| Removed Feature | Correlation matrix dropped (low actionable value vs added cognitive load) |
+| Confidence | Derived from blended structural + lexical logits with penalties on disagreement |
+| Naming Consistency | UI uses Main Dish / Dessert / Beverage; raw data kept as `plat/dessert/boisson` |
+| Robustness | Fallback to system interpreter if Poetry env missing; seasonal baseline guards sparse periods |
+| Limitations | Manual prototypes & lexicons; no time decay in ranking; rule-based arbitration |
+| Future Work | Learn embeddings, sentiment-adjusted popularity, dynamic season segmentation, calibrated confidence |
+
+## 9. Documentation & Tests
 ```bash
 # Build docs locally
 poetry run sphinx-build -b html docs docs/_build/html
@@ -121,7 +160,7 @@ poetry run pytest -q
 If the GitHub Pages site looks empty right after a push, wait ~1–2 minutes (deployment job) then hard refresh (Ctrl+Shift+R). Ensure the link points to the repository root: `https://<user>.github.io/cooking-assistant/`.
 Coverage threshold: 90% (current > 90%).
 
-## 9. Configuration
+## 10. Configuration
 Edit `cooking_assistant/config.py` for paths & Bayesian parameters.
 
 Environment examples:
@@ -158,10 +197,10 @@ poetry install
 ```
 This places the environment under `./.venv/` so path-based tooling (like some IDEs) picks it up automatically.
 
-## 10. Contributing
+## 11. Contributing
 Branch naming: `feat/`, `fix/`, `docs/`. Run tests + docs build before PR.
 
-## 11. License
+## 12. License
 MIT (see `LICENSE`).
 
 ---

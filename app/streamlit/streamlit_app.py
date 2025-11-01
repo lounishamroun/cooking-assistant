@@ -15,7 +15,7 @@ try:
     from .components import (
         inject_css,
         render_insights_and_quadrants,
-        render_correlation,
+        # render_correlation,  # removed feature
         section_header,
         info_box,
     )
@@ -23,7 +23,7 @@ except ImportError:  # running as a top-level script via `streamlit run`
     from components import (
         inject_css,
         render_insights_and_quadrants,
-        render_correlation,
+        # render_correlation,  # removed feature
         section_header,
         info_box,
     )
@@ -230,8 +230,8 @@ def load_data():
     # Normalize any lingering French headers
     df = _normalize_language_columns(df)
     top20_df = _normalize_language_columns(top20_df)
-    # English display type column
-    type_map = {'plat': 'main', 'boisson': 'drink', 'dessert': 'dessert'}
+    # Unified English display type column (consistent naming)
+    type_map = {'plat': 'Main Dish', 'boisson': 'Beverage', 'dessert': 'Dessert'}
     if not top20_df.empty:
         top20_df['recipe_type_en'] = top20_df['recipe_type'].map(type_map).fillna(top20_df['recipe_type'])
     return df, top20_df
@@ -262,7 +262,6 @@ nav_items = [
     ("📊", "Historical Trends", "Publication trends over time"),
     ("🔍", "Recipe Lookup", "Search individual recipes"),
     ("🧭", "Analytical Quadrants", "Effort vs popularity quadrants & insights"),
-    ("🧪", "Correlation Matrix", "Ordered correlation heatmap"),
     ("🔬", "Methodology", "Classifier & Bayesian scoring methodology")
 ]
 
@@ -289,7 +288,7 @@ if page == "Home":
         <p class="description-text">
             This platform provides comprehensive analysis of recipe classification data from Food.com. 
             Our machine learning system automatically categorizes recipes into three main types: 
-            plats (main dishes), desserts, and boissons (beverages).
+            plats (Main Dish), desserts (Dessert), and boissons (Beverage).
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -534,6 +533,18 @@ elif page == "Historical Trends":
 
     # Group by year and type
     count_by_year_type = df.groupby(['Year', 'Type']).size().unstack(fill_value=0)
+    # Rename French 'plat' to more evaluator-friendly 'Meal' for this visualization context only
+    if 'plat' in count_by_year_type.columns:
+        count_by_year_type = count_by_year_type.rename(columns={'plat': 'Meal'})
+    # Also adapt other labels to Title case consistently
+    rename_cols = {}
+    for c in count_by_year_type.columns:
+        if c == 'dessert':
+            rename_cols[c] = 'Dessert'
+        elif c == 'boisson':
+            rename_cols[c] = 'Beverage'
+    if rename_cols:
+        count_by_year_type = count_by_year_type.rename(columns=rename_cols)
 
     # Create dark-themed stacked bar chart
     fig_line = px.bar(count_by_year_type, 
@@ -613,8 +624,8 @@ elif page == "Seasonal Rankings":
     if 'recipe_type_en' in top20_df.columns:
         top20_filtered = top20_df[(top20_df['Season'] == season) & (top20_df['recipe_type_en'] == recipe_type_display)]
     else:
-        # Fallback to original types
-        inv_map = {'main': 'plat', 'drink': 'boisson', 'dessert': 'dessert'}
+        # Fallback to original raw types when English mapping absent
+        inv_map = {'Main Dish': 'plat', 'Beverage': 'boisson', 'Dessert': 'dessert'}
         underlying = inv_map.get(recipe_type_display, recipe_type_display)
         top20_filtered = top20_df[(top20_df['Season'] == season) & (top20_df['recipe_type'] == underlying)]
 
@@ -645,59 +656,72 @@ elif page == "Recipe Lookup":
     st.markdown('<h2 class="section-header">Individual Recipe Analysis</h2>', unsafe_allow_html=True)
     st.markdown("""
     <ul class="point-list">
-        <li><strong>Input:</strong> Numeric recipe ID.</li>
+        <li><strong>Input:</strong> Recipe name (type to filter).</li>
         <li><strong>Returns:</strong> Type, confidence, submission date, description.</li>
-        <li><strong>Purpose:</strong> Spot‑check classification validity.</li>
+        <li><strong>Purpose:</strong> Spot‑check classification validity with natural name search.</li>
     </ul>
     """, unsafe_allow_html=True)
+    st.markdown("""
+    <div class="home-card" style="margin-top:0.5rem;">
+      <p class="description-text" style="margin-bottom:0.4rem;">
+        Start typing a recipe name to filter candidates. If duplicate names exist, a secondary selector appears to disambiguate.
+      </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    recipe_id = st.text_input("Enter Recipe ID:")
-    if recipe_id:
-        try:
-            recipe_id_int = int(recipe_id)
-            recipe_found = df[df['ID'] == recipe_id_int]
-            if not recipe_found.empty:
-                recipe_info = recipe_found.iloc[0]
-                st.success(f"Recipe found: {recipe_info.get('Name', 'Name not available')}")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <h4>Classification Type</h4>
-                        <h3>{recipe_info.get('Type', 'N/A')}</h3>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <h4>Recipe ID</h4>
-                        <h3>{recipe_info.get('ID', 'N/A')}</h3>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if 'Confidence_Percentage' in df.columns:
-                        st.markdown(f"""
-                        <div class="metric-card">
-                            <h4>Confidence Score</h4>
-                            <h3>{recipe_info.get('Confidence_Percentage', 'N/A'):.1f}%</h3>
-                        </div>
-                        """, unsafe_allow_html=True)
-                with col2:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <h4>Submission Date</h4>
-                        <h3>{recipe_info.get('Submission_Date', 'N/A')}</h3>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if 'Description' in recipe_info.index and pd.notna(recipe_info['Description']):
-                        st.markdown(f"""
-                        <div class="metric-card">
-                            <h4>Description</h4>
-                            <p>{recipe_info['Description']}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-            else:
-                st.error("No recipe found with this ID")
-        except ValueError:
-            st.error("Please enter a valid numeric ID")
+    # Provide a lightweight search experience: filter names client-side via selectbox dynamic options.
+    # For large datasets we cap the selectable set for performance.
+    max_options = 2000
+    all_names = df['Name'].dropna().unique().tolist()
+    if len(all_names) > max_options:
+        st.info(f"Dataset has {len(all_names):,} unique names; showing first {max_options:,} alphabetically for performance.")
+        all_names = sorted(all_names)[:max_options]
+    else:
+        all_names = sorted(all_names)
+
+    selected_name = st.selectbox("Recipe name:", options=["-- Select a recipe --"] + all_names)
+    if selected_name and selected_name != "-- Select a recipe --":
+        candidates = df[df['Name'] == selected_name]
+        if len(candidates) > 1:
+            st.warning(f"{len(candidates)} recipes share this name. Pick the specific entry below.")
+            # Provide a disambiguation selectbox showing (ID, Type, Date)
+            candidates = candidates.copy()
+            candidates['Label'] = candidates.apply(lambda r: f"ID {r['ID']} • {r.get('Type','?')} • {r.get('Submission_Date','?')}", axis=1)
+            option = st.selectbox("Select exact match:", candidates['Label'].tolist())
+            chosen_row = candidates[candidates['Label'] == option].iloc[0]
+        else:
+            chosen_row = candidates.iloc[0]
+
+        st.success(f"Recipe selected: {chosen_row.get('Name', 'N/A')}")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4>Classification Type</h4>
+                <h3>{chosen_row.get('Type', 'N/A')}</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            if 'Confidence_Percentage' in df.columns:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <h4>Confidence Score</h4>
+                    <h3>{chosen_row.get('Confidence_Percentage', float('nan')):.1f}%</h3>
+                </div>
+                """, unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <h4>Submission Date</h4>
+                <h3>{chosen_row.get('Submission_Date', 'N/A')}</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            if 'Description' in chosen_row.index and pd.notna(chosen_row['Description']):
+                st.markdown(f"""
+                <div class="metric-card">
+                    <h4>Description</h4>
+                    <p>{chosen_row['Description']}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
 elif page == "Analytical Quadrants":
     section_header("Analytical Synopsis & Quadrants")
@@ -705,10 +729,6 @@ elif page == "Analytical Quadrants":
     info_box("Method", "Effort is a 0–10 heuristic; Bayesian mean shrinks low-review recipes toward their type average using kb. Medians (not averages) define quadrant boundaries to stay robust against outliers.")
     render_insights_and_quadrants(df)
 
-elif page == "Correlation Matrix":
-    section_header("Ordered Correlation Matrix")
-    render_correlation(df)
-    info_box("Reading", "Each cell shows Spearman correlation (monotonic relationship) between numeric features. We remove IDs and constant columns. Ordering by |corr(bayes_mean)| highlights features most associated with popularity. Values near 0 mean weak relation; strong colors do NOT imply causation.")
 elif page == "Seasonal Distribution":
     section_header("Seasonal Review Distribution")
     info_box("Purpose", "Shows the share of reviews per season for each recipe type to understand seasonal engagement.")
@@ -760,7 +780,15 @@ elif page == "Seasonal Distribution":
         # Ensure correct ordering of seasons
         season_order = ['Spring','Summer','Fall','Winter']
         dist_df['Season'] = pd.Categorical(dist_df['Season'], season_order, ordered=True)
-        type_choice = st.selectbox("Recipe Type:", sorted(dist_df['recipe_type'].unique()))
+        # Translate any lingering French recipe_type values for display
+        type_translation = {'plat': 'Main Dish', 'dessert': 'Dessert', 'boisson': 'Beverage'}
+        # Create a display column without mutating underlying grouping logic
+        dist_df['recipe_type_display'] = dist_df['recipe_type'].map(lambda x: type_translation.get(str(x).lower(), x.title()))
+        display_options = sorted(dist_df['recipe_type_display'].unique())
+        display_choice = st.selectbox("Recipe Type:", display_options)
+        # Reverse map to underlying raw key in case user selects translated label
+        reverse_map = {v: k for k, v in type_translation.items()}
+        type_choice = reverse_map.get(display_choice, display_choice.lower())
         metric_mode = st.radio("Metric", ["Percentage", "Reviews"], horizontal=True)
         filtered = dist_df[dist_df['recipe_type'] == type_choice].sort_values('Season')
         values_col = 'Percentage' if metric_mode == 'Percentage' else 'Reviews'
@@ -770,88 +798,99 @@ elif page == "Seasonal Distribution":
         fig.update_traces(textinfo='label+percent' if metric_mode=='Percentage' else 'label+value')
         fig.update_layout(margin=dict(t=30,l=0,r=0,b=0))
         st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(filtered[['Season','Reviews','Percentage']].style.format({'Reviews':'{:,.0f}','Percentage':'{:.2f}%'}), use_container_width=True)
+        # Show translated type label in table via rename
+        show_df = filtered[['Season','Reviews','Percentage']].copy()
+        st.dataframe(show_df.style.format({'Reviews':'{:,.0f}','Percentage':'{:.2f}%'}), use_container_width=True)
 
 # -------------------------------
 # METHODOLOGY PAGE
 # -------------------------------
 elif page == "Methodology":
+    # Softer background & reduced contrast for readability
+    st.markdown("""
+    <style>
+    /* Softer neutral palette for methodology */
+    .method-box {background:#2a3138;border:1px solid #3d4a53;border-radius:8px;padding:16px;margin-bottom:14px;}
+    .phase-title {font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#c9ced2;}
+    /* Override default bright white markdown inside this section */
+    .method-box, .method-box p, .method-box li, .method-box code, .method-box pre {color:#c9ced2 !important;}
+    .method-box h4, .method-box h3 {color:#d4d8dc !important;}
+    code, pre {background:#353d45 !important;color:#d4d8dc !important;}
+    /* Streamlit expander header adjustments */
+    div.streamlit-expanderHeader, .streamlit-expanderHeader {color:#b9c1c7 !important;font-weight:500;background:#2a3138 !important;filter:brightness(0.92);}
+    /* Remove white overlay on hover/focus */
+    div.streamlit-expanderHeader:hover, .streamlit-expanderHeader:hover {background:#2f373e !important;}
+    div.streamlit-expanderHeader:focus, .streamlit-expanderHeader:focus {background:#2f373e !important;}
+    /* Body of expander inherits neutral background */
+    .streamlit-expanderContent {background:#2a3138 !important;}
+    /* Remove strong white from links */
+    .method-box a {color:#b7c2cc !important;}
+    </style>
+    """, unsafe_allow_html=True)
+
     section_header("Recipe Classification & Ranking Methodology")
     st.markdown("""
     #### 🎯 Objective
-    Provide a transparent view of how recipes are **classified** (plat, dessert, boisson) and **ranked** (Bayesian seasonal scores).
+    Transparent breakdown of **classification** (plat / dessert / boisson) and **seasonal ranking** logic.
 
-    #### 📊 Data Source
-    - **Origin**: Food.com public datasets (Recipes & Interactions)
-    - **Primary file**: `RAW_recipes.csv`
-    - **Signals**: Nutrition, names, tags, user interactions (ratings + reviews)
+    #### 📊 Data Sources
+    **Classification input**: `RAW_recipes.csv` (nutrition, names, tags, metadata).
+    **Ranking inputs**:
+    - `RAW_interactions.csv` (user ratings + review texts)
+    - `recipes_classified.csv` (output of phases 0–3 with final type & confidence)
+    Signals leveraged:
+    - Classification: nutrition-derived indices, prototype similarities, lexicon matches
+    - Ranking: validated ratings (exclude 0), review counts per season, seasonal baselines
     """)
 
-    st.markdown("### 🔄 Four-Phase Classification Pipeline")
-    c1, c2 = st.columns(2)
-    with c1:
+    st.markdown("### 🔄 Phased Classification Pipeline")
+    with st.expander("Phase 0 – Structural Feature Extraction", expanded=True):
         st.markdown("""
-        **Phase 0 – Structural Feature Extraction**
-        - Parse nutrition → cal, fat, sugar, sod, prot, sat, carbs
-        - Compute density & energy-based features (e.g., sugar_density, prot_density)
-        - Flavor-energy indexes:
+        Builds normalized nutritional + flavor indicators.
+        - Parse: calories, macronutrients, sugar, sodium.
+        - Densities: `sugar_density = sugar / (cal + ε)` etc.
+        - Indices:
           - `sweet_idx = 0.55*sugar_E% + 0.45*sugar_density`
           - `savory_idx = 0.55*prot_density + 0.45*(sod_density/10)`
           - `lean_idx = 1 - fat_E%`
-        - Hybrid detection via `min(sweet_idx, savory_idx)`
+        - Hybrid flag: `hybrid_idx = min(sweet_idx, savory_idx)`
         """)
+    with st.expander("Phase 1 – Prototype Similarity", expanded=True):
         st.markdown("""
-        **Phase 2 – NLP Lexicon Scoring**
-        - STRONG lexicon (binary presence) & SOFT lexicon (frequency counts)
-        - Examples: `curry→plat`, `cake→dessert`, `smoothie→boisson`
-        - NLP logits: `logits = 3.0*STRONG + 0.8*SOFT + 0.1`
+        Embed recipe in (sweet, savory, lean) space and compare to fixed prototypes via cosine similarity:
+        - Dessert: (0.68, 0.07, 0.40)
+        - Plat:    (0.12, 0.28, 0.45)
+        - Boisson: (0.09, 0.05, 0.85)
+        Structural heuristics adjust logits (e.g., penalize low-cal savory misfits, boost fruit-forward sweets).
         """)
-    with c2:
+    with st.expander("Phase 2 – NLP Lexicon Scoring", expanded=True):
         st.markdown("""
-        **Phase 1 – Prototype Similarity**
-        - Embed recipe as vector (sweet, savory, lean)
-        - Cosine similarity to prototypes:
-          - Dessert: (0.68, 0.07, 0.40)
-          - Plat:    (0.12, 0.28, 0.45)
-          - Boisson: (0.09, 0.05, 0.85)
-        - Structural logits adjusted by heuristic controls.
+        Name + tags processed against two lexicons:
+        - STRONG (binary presence) – decisive anchors (`curry`, `cheesecake`, `smoothie`).
+        - SOFT (counts) – supportive context.
+        Combined: `logits = 3.0*STRONG + 0.8*SOFT + 0.1` then softmax.
         """)
+    with st.expander("Phase 3 – Arbitration Layer", expanded=True):
         st.markdown("""
-        **Phase 3 – Arbitration Layer**
-        - Combine structural + NLP decisions
-        - Handle agreement, disagreement, confidence-adjusted blending
-        - Apply exceptions (e.g., smoothie/milkshake → boisson)
+        Mini stacking-style logic:
+        - If high structural confidence → keep structure, lightly blend coherent NLP.
+        - If weak structural confidence → allow NLP dominance when level ≥ medium.
+        - Handle disagreement with penalties / conditional overrides (e.g., smoothie → boisson).
+        - Hard-coded ID exceptions for edge recipes.
+        Output: final type + confidence percentage.
         """)
 
     st.markdown("### ⭐ Bayesian Seasonal Ranking")
-    st.markdown("""
-    We compute per-season top 20 for each recipe type balancing **quality** (validated ratings) and **popularity** (review volume).
-    """)
-    c3, c4 = st.columns(2)
-    with c3:
-        st.markdown("""
-        **1. Bayesian Quality (Q-Score)**
-        `Q = (kb*season_avg + nb_valid_ratings*valid_avg_rating) / (kb + nb_valid_ratings)`
-        Parameters:
-        - `valid_avg_rating`: mean rating > 0
-        - `nb_valid_ratings`: count of ratings > 0
-        - `season_avg`: baseline for type-season
-        - `kb`: shrinkage strength
+    with st.expander("Quality Component (Q-Score)", expanded=True):
+        st.markdown("""`Q = (kb*season_avg + nb_valid_ratings*valid_avg_rating) / (kb + nb_valid_ratings)`
+        Shrinks sparse rating profiles toward seasonal baseline. Ratings with value 0 are excluded (non-rating interactions).
         """)
-    with c4:
-        st.markdown("""
-        **2. Popularity Weight**
-        `Pop_Weight = (1 - exp(-nb_season_reviews / kpop))^gamma`
-        Parameters:
-        - `nb_season_reviews`: total reviews (incl. 0 ratings)
-        - `kpop`: popularity scale parameter
-        - `gamma`: amplification factor
+    with st.expander("Popularity Weight", expanded=True):
+        st.markdown("""`Pop_Weight = (1 - exp(-nb_season_reviews / kpop))^gamma`
+        Diminishing returns curve: early review accumulation increases weight sharply, saturation later.
         """)
-    st.markdown("""
-    **3. Final Score**
-    `Final = Q * Pop_Weight`
-    → Produces a calibrated seasonal ranking.
-    """)
+    with st.expander("Final Score", expanded=True):
+        st.markdown("""`Final = Q * Pop_Weight` → Drives ranking per (season, type).""")
 
     st.markdown("### ⚙ Bayesian Parameters (Config)")
     params_table = pd.DataFrame({

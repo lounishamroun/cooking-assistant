@@ -7,6 +7,8 @@
 getting-started
 methodology-classifier
 methodology-bayesian
+design-rationale
+evaluation-cheatsheet
 reference
 
 ```
