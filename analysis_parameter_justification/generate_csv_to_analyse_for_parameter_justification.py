@@ -81,7 +81,7 @@ def main():
             print(f"  Impossible d'écrire l'alias latest: {alias_err}")
         print(f"   Sauvegardé: {seasonal_filename} (+ alias season_type_distribution_latest.csv)")
         
-        # 3. Analyse top reviews
+        # 3. Analyse top reviews (seulement top_100; suppression des anciens fichiers plus petits)
         print("\n3. Analyse top reviews...")
         top_reviews_results = analyze_top_reviews_by_type_season(
             merged_df=merged_df,
@@ -104,6 +104,24 @@ def main():
         except Exception as e_alias:
             print(f"   Impossible de créer alias top_100 latest: {e_alias}")
         print("   Sauvegardé: top_100_reviews_by_type_season_*.csv (+ alias top_100_reviews_by_type_season_latest.csv)")
+        # Nettoyage des fichiers historiques top_3/top_5/top_10 (pollution du dépôt)
+        keep_smaller_sets = os.getenv("KEEP_SMALLER_TOP_FILES", "0") == "1"
+        if keep_smaller_sets:
+            print("   KEEP_SMALLER_TOP_FILES=1 → conservation des anciens fichiers top_3/top_5/top_10")
+        else:
+            obsolete_prefixes = ["top_3_reviews_by_type_season_", "top_5_reviews_by_type_season_", "top_10_reviews_by_type_season_"]
+            removed = 0
+            for f in os.listdir(output_dir):
+                if any(f.startswith(pfx) for pfx in obsolete_prefixes) and f.endswith('.csv'):
+                    try:
+                        os.remove(os.path.join(output_dir, f))
+                        removed += 1
+                    except Exception as rm_err:
+                        print(f"   Impossible de supprimer {f}: {rm_err}")
+            if removed:
+                print(f"   Nettoyage: {removed} fichier(s) top_3/top_5/top_10 supprimé(s)")
+            else:
+                print("   Aucun fichier top_3/top_5/top_10 à supprimer")
         
         # 4. Résumé
         print("\nANALYSE TERMINÉE!")
@@ -129,6 +147,7 @@ if __name__ == "__main__":
     success = main()
     if success:
         print("\nMission accomplie!")
+        print("Astuce: définissez KEEP_SMALLER_TOP_FILES=1 avant l'exécution pour conserver les jeux réduits si vous en avez encore besoin.")
     else:
         print("\nÉchec de l'analyse.")
         sys.exit(1)

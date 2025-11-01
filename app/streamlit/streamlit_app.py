@@ -872,16 +872,28 @@ elif page == "Methodology":
         """)
 
     st.markdown("### ⭐ Bayesian Seasonal Ranking")
-    with st.expander("Quality Component (Q-Score)", expanded=True):
-        st.markdown("""`Q = (kb*season_avg + nb_valid_ratings*valid_avg_rating) / (kb + nb_valid_ratings)`
-        Shrinks sparse rating profiles toward seasonal baseline. Ratings with value 0 are excluded (non-rating interactions).
-        """)
-    with st.expander("Popularity Weight", expanded=True):
-        st.markdown("""`Pop_Weight = (1 - exp(-nb_season_reviews / kpop))^gamma`
-        Diminishing returns curve: early review accumulation increases weight sharply, saturation later.
-        """)
-    with st.expander("Final Score", expanded=True):
-        st.markdown("""`Final = Q * Pop_Weight` → Drives ranking per (season, type).""")
+    st.markdown("""
+    <div class="method-box">
+        <h3 class="phase-title" style="font-size:1.05rem;text-decoration:underline;">Quality Component (Q-Score)</h3>
+        <p><code>Q = (kb*season_avg + nb_valid_ratings*valid_avg_rating) / (kb + nb_valid_ratings)</code></p>
+        <p>Shrinks sparse rating profiles toward seasonal baseline. Ratings with value 0 are excluded (non-rating interactions).</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="method-box">
+        <h3 class="phase-title" style="font-size:1.05rem;text-decoration:underline;">Popularity Weight</h3>
+        <p><code>Pop_Weight = (1 - exp(-nb_season_reviews / kpop))^gamma</code></p>
+        <p>Diminishing returns curve: early review accumulation increases weight sharply, saturation later.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="method-box">
+        <h3 class="phase-title" style="font-size:1.05rem;text-decoration:underline;">Final Score</h3>
+        <p><code>Final = Q * Pop_Weight</code> → Drives ranking per (season, type).</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("### ⚙ Bayesian Parameters (Config)")
     params_table = pd.DataFrame({
