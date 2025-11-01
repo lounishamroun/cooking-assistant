@@ -12,6 +12,25 @@
 ### TL;DR
 Classify recipes (4-phase structural + lexical arbitration), compute seasonal Bayesian rankings (quality shrinkage × popularity saturation), explore results in a Streamlit dashboard with canonical `*_latest.csv` artifacts for reproducible evaluation.
 
+### Global Architecture (Snapshot)
+```
+ cooking-assistant/
+ ├── cooking_assistant/            # Core package (config, data, analysis, utils)
+ │   ├── data/                     # Download, load, preprocess raw → interim
+ │   ├── analysis/                 # Seasonal + Bayesian scoring + reviews
+ │   └── utils/                    # Results & shared helpers
+ ├── app/                          # Orchestrator + Streamlit UI
+ ├── scripts/                      # Reproducible pipeline steps (classification, rankings, metrics)
+ ├── data/                         # raw / interim / processed artifacts
+ ├── analysis_parameter_justification/  # Parameter & methodology justification assets
+ ├── docs/                         # Sphinx (MyST) documentation site
+ ├── tests/                        # Unit & integration tests (90%+ coverage)
+ └── Dockerfile / docker-compose.yml
+```
+Data flow: `RAW_recipes.csv + RAW_interactions.csv → classifier (recipes_classified.csv) → ranking (top20_<type>_for_each_season.csv) → Streamlit UI`.
+
+Why here? A compact view helps evaluators orient instantly; deep detail remains in `ARCHITECTURE.md`.
+
 ### Primary Data Sources
 | File | Role |
 |------|------|
