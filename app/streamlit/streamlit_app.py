@@ -58,16 +58,12 @@ def _standardize_top20_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Rename varying score/season columns to a consistent schema if present."""
     if df.empty:
         return df
-    # Possible score column variants produced by different pipeline versions.
     score_candidates = [
-        'Bayesian_Score',
-        'Final_Score',
-        'Q_Score_Bayesien_Poids_popularité',
-        'Q_Score_Bayesien_Poids_popularite',  # without accent fallback
-        'Q_Score_Bayesien'
+        'Bayesian_Score', 'Final_Score', 'Q_Score_Bayesien_Poids_popularité',
+        'Q_Score_Bayesien_Poids_popularite', 'Q_Score_Bayesien'
     ]
     season_candidates = ['Season', 'Saison']
-    rename_map = {}
+    rename_map: dict[str, str] = {}
     for col in score_candidates:
         if col in df.columns and 'Bayesian_Score' not in df.columns:
             rename_map[col] = 'Bayesian_Score'
@@ -76,7 +72,6 @@ def _standardize_top20_columns(df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns and 'Season' not in df.columns:
             rename_map[col] = 'Season'
             break
-    # Common French -> English mapping for remaining columns.
     base_mapping = {
         'ranking': 'Ranking',
         'recipe_id': 'Recipe_ID',
@@ -88,53 +83,37 @@ def _standardize_top20_columns(df: pd.DataFrame) -> pd.DataFrame:
             rename_map[k] = v
     if rename_map:
         df = df.rename(columns=rename_map)
-    # Round score if present.
     if 'Bayesian_Score' in df.columns:
         df['Bayesian_Score'] = pd.to_numeric(df['Bayesian_Score'], errors='coerce').round(2)
-    # Ensure we have a Ranking column: compute descending score order within (Season, recipe_type) groups
     if 'Ranking' not in df.columns and 'Bayesian_Score' in df.columns:
-        # Fallback type column name(s)
         type_col = 'recipe_type' if 'recipe_type' in df.columns else ('Type' if 'Type' in df.columns else None)
         season_col = 'Season' if 'Season' in df.columns else None
         if type_col and season_col:
             df = df.sort_values([season_col, type_col, 'Bayesian_Score'], ascending=[True, True, False])
-            df['Ranking'] = (
-                df.groupby([season_col, type_col])
-                  .cumcount()
-                  .add(1)
-            )
-    # Guarantee deterministic ordering for downstream pages
+            df['Ranking'] = df.groupby([season_col, type_col]).cumcount().add(1)
     ordering_cols = [c for c in ['Season', 'recipe_type', 'Ranking'] if c in df.columns]
     if ordering_cols:
         df = df.sort_values(ordering_cols)
     return df
 
-@st.cache_data(show_spinner=False)
 def _normalize_language_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Rename any French column headers to English to ensure consistent UI language.
-    This is idempotent and safe if columns are already English.
-    """
+    """Rename French column headers to English consistently (idempotent)."""
     if df is None or df.empty:
         return df
     mapping = {
-        # Season distribution / justification
         'Type_Recette': 'recipe_type',
         'Saison': 'Season',
         'Nombre_Reviews': 'Reviews',
         'Pourcentage': 'Percentage',
-        # Rankings / scoring
         'Q_Score_Bayesien': 'Bayesian_Score',
         'Q_Score_Bayesien_Poids_popularité': 'Bayesian_Score',
         'Q_Score_Bayesien_Poids_popularite': 'Bayesian_Score',
-        # Confidence alias sometimes exported
         'conf_%': 'confidence_pct'
     }
-    # Only rename keys that exist and target name not already present to avoid duplicates
     rename_pairs = {fr: en for fr, en in mapping.items() if fr in df.columns and (en not in df.columns or fr == 'conf_%')}
     if rename_pairs:
         df = df.rename(columns=rename_pairs)
     return df
-
 def load_data():
     # Prefer enriched dataset if present (non-invasive enrichment layer)
     enriched_path = "data/interim/recipes_classified_enriched.csv"
@@ -804,28 +783,28 @@ elif page == "Seasonal Distribution":
 # METHODOLOGY PAGE
 # -------------------------------
 elif page == "Methodology":
-    # Softer background & reduced contrast for readability
+    # Scoped CSS wrapper to eliminate residual bright backgrounds and avoid side-effects on other pages
     st.markdown("""
     <style>
-    /* Softer neutral palette for methodology */
-    .method-box {background:#2a3138;border:1px solid #3d4a53;border-radius:8px;padding:16px;margin-bottom:14px;}
-    .phase-title {font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#c9ced2;}
-    /* Override default bright white markdown inside this section */
-    .method-box, .method-box p, .method-box li, .method-box code, .method-box pre {color:#c9ced2 !important;}
-    .method-box h4, .method-box h3 {color:#d4d8dc !important;}
-    code, pre {background:#353d45 !important;color:#d4d8dc !important;}
-    /* Streamlit expander header adjustments */
-    div.streamlit-expanderHeader, .streamlit-expanderHeader {color:#b9c1c7 !important;font-weight:500;background:#2a3138 !important;filter:brightness(0.92);}
-    /* Remove white overlay on hover/focus */
-    div.streamlit-expanderHeader:hover, .streamlit-expanderHeader:hover {background:#2f373e !important;}
-    div.streamlit-expanderHeader:focus, .streamlit-expanderHeader:focus {background:#2f373e !important;}
-    /* Body of expander inherits neutral background */
-    .streamlit-expanderContent {background:#2a3138 !important;}
-    /* Remove strong white from links */
-    .method-box a {color:#b7c2cc !important;}
+    #methodology-scope [data-testid="stExpander"] > details > summary {background:#2a3138 !important;color:#b9c1c7 !important;box-shadow:none !important;outline:none !important;border-radius:8px !important;-webkit-tap-highlight-color:transparent;}
+    #methodology-scope [data-testid="stExpander"] > details > summary:hover,
+    #methodology-scope [data-testid="stExpander"] > details > summary:focus,
+    #methodology-scope [data-testid="stExpander"] > details > summary:focus-visible,
+    #methodology-scope [data-testid="stExpander"][aria-expanded="true"] > details > summary,
+    #methodology-scope [data-testid="stExpander"] > details[open] > summary {background:#2f373e !important;box-shadow:none !important;outline:none !important;filter:none !important;}
+    #methodology-scope [data-testid="stExpander"] .streamlit-expanderContent {background:#2a3138 !important;}
+    #methodology-scope .method-box *, #methodology-scope [data-testid="stMarkdownContainer"] * {background-color:transparent !important;}
+    #methodology-scope ::selection {background:#3a4148 !important;color:#d4d8dc !important;}
+    #methodology-scope .method-box {background:#2a3138;border:1px solid #3d4a53;border-radius:8px;padding:16px;margin-bottom:14px;}
+    #methodology-scope .phase-title {font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#c9ced2;}
+    #methodology-scope .method-box, #methodology-scope .method-box p, #methodology-scope .method-box li, #methodology-scope .method-box code, #methodology-scope .method-box pre {color:#c9ced2 !important;}
+    #methodology-scope .method-box h4, #methodology-scope .method-box h3 {color:#d4d8dc !important;}
+    #methodology-scope code, #methodology-scope pre {background:#353d45 !important;color:#d4d8dc !important;}
+    #methodology-scope .method-box a {color:#b7c2cc !important;}
     </style>
     """, unsafe_allow_html=True)
 
+    st.markdown('<div id="methodology-scope">', unsafe_allow_html=True)
     section_header("Recipe Classification & Ranking Methodology")
     st.markdown("""
     #### 🎯 Objective
@@ -926,3 +905,4 @@ elif page == "Methodology":
     """)
 
     st.info("For deeper derivations and justification, consult the linked Sphinx methodology pages and justification markdown documents.")
+    st.markdown('</div>', unsafe_allow_html=True)
