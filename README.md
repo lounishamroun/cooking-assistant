@@ -27,9 +27,7 @@ Classify recipes (4-phase structural + lexical arbitration), compute seasonal Ba
  ├── tests/                        # Unit & integration tests (90%+ coverage)
  └── Dockerfile / docker-compose.yml
 ```
-Data flow: `RAW_recipes.csv + RAW_interactions.csv → classifier (recipes_classified.csv) → ranking (top20_<type>_for_each_season.csv) → Streamlit UI`.
-
-Why here? A compact view helps evaluators orient instantly; deep detail remains in `ARCHITECTURE.md`.
+Data flow: `RAW_recipes.csv + RAW_interactions.csv → classifier (recipes_classified.csv) → enrichment (recipes_classified_enriched.csv) → ranking (top20_<type>_for_each_season.csv) → Streamlit UI`.
 
 ### Primary Data Sources
 | File | Role |

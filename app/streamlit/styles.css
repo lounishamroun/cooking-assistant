@@ -97,3 +97,39 @@ ul.point-list li strong { color: var(--ca-accent); }
 
 /* Improve contrast for description text (single declaration retained above) */
 
+
+/* =============================
+  Methodology Page Darker Text
+  =============================
+  The global theme sets very bright (#f4f4f4) text via broad selectors with !important.
+  We override inside #methodology-scope only, using higher specificity and !important to soften contrast.
+*/
+#methodology-scope [data-testid="stMarkdownContainer"] p,
+#methodology-scope [data-testid="stMarkdownContainer"] li,
+#methodology-scope [data-testid="stMarkdownContainer"] code,
+#methodology-scope [data-testid="stMarkdownContainer"] pre,
+#methodology-scope [data-testid="stMarkdownContainer"] span,
+#methodology-scope [data-testid="stMarkdownContainer"] strong,
+#methodology-scope [data-testid="stMarkdownContainer"] em { color:#a0a7ac !important; }
+
+#methodology-scope h1,
+#methodology-scope h2,
+#methodology-scope h3,
+#methodology-scope h4 { color:#b2b9bf !important; }
+
+/* Darker expander summaries & phase titles */
+#methodology-scope [data-testid="stExpander"] > details > summary { color:#9aa1a6 !important; }
+#methodology-scope .phase-title { color:#a2a9ae !important; }
+
+/* Darken main Methodology section header (title only) */
+h2.section-header#recipe-classification-&-ranking-methodology, h2.section-header:contains('Methodology') { color:#8f9599 !important; text-decoration:none !important; border-left-color:#555 !important; }
+
+/* Expander content paragraphs/headings inside methodology scope */
+#methodology-scope [data-testid="stExpander"] .streamlit-expanderContent [data-testid="stMarkdownContainer"] * { color:#a0a7ac !important; }
+
+/* Links: slightly muted vs body */
+#methodology-scope a { color:#9aa3a9 !important; }
+
+/* Code blocks already have dark background; soften foreground */
+#methodology-scope code, #methodology-scope pre { color:#b2b9bf !important; }
+

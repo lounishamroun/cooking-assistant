@@ -590,21 +590,34 @@ elif page == "Seasonal Rankings":
     </ul>
     """, unsafe_allow_html=True)
 
+    # Defensive: warn if any recipe type has fewer than expected distinct seasons
+    if not top20_df.empty and 'recipe_type' in top20_df.columns and 'Season' in top20_df.columns:
+        coverage = top20_df.groupby('recipe_type')['Season'].nunique().to_dict()
+        expected = 4
+        gaps = {t: c for t, c in coverage.items() if c < expected}
+        if gaps:
+            friendly_map = {'plat': 'Main Dish', 'dessert': 'Dessert', 'boisson': 'Beverage'}
+            gap_msgs = [f"{friendly_map.get(t,t)}: {c}/4" for t, c in gaps.items()]
+            st.warning("Incomplete seasonal coverage detected → " + ", ".join(gap_msgs) + ". Regenerate rankings script if this is unexpected.")
+
     # Selection filters
     col3, col4 = st.columns(2)
     with col3:
         season = st.selectbox("Select Season:", sorted(top20_df['Season'].unique()))
     with col4:
-        recipe_type_display = st.selectbox("Select Recipe Type:", sorted(top20_df.get('recipe_type_en', top20_df['recipe_type']).unique()))
+        # Build clean set of display types (strip/case-normalize)
+        display_types_raw = top20_df.get('recipe_type_en', top20_df['recipe_type']).fillna('')
+        display_types = sorted({str(t).strip(): str(t).strip() for t in display_types_raw})
+        recipe_type_display = st.selectbox("Select Recipe Type:", display_types)
 
     # Filter data using English layer if present
     if 'recipe_type_en' in top20_df.columns:
-        top20_filtered = top20_df[(top20_df['Season'] == season) & (top20_df['recipe_type_en'] == recipe_type_display)]
+        top20_filtered = top20_df[(top20_df['Season'].astype(str).str.strip() == str(season).strip()) & (top20_df['recipe_type_en'].astype(str).str.strip() == recipe_type_display.strip())]
     else:
         # Fallback to original raw types when English mapping absent
         inv_map = {'Main Dish': 'plat', 'Beverage': 'boisson', 'Dessert': 'dessert'}
-        underlying = inv_map.get(recipe_type_display, recipe_type_display)
-        top20_filtered = top20_df[(top20_df['Season'] == season) & (top20_df['recipe_type'] == underlying)]
+        underlying = inv_map.get(recipe_type_display.strip(), recipe_type_display.strip()).strip()
+        top20_filtered = top20_df[(top20_df['Season'].astype(str).str.strip() == str(season).strip()) & (top20_df['recipe_type'].astype(str).str.strip() == underlying)]
 
     # Display results
     if not top20_filtered.empty:
@@ -786,7 +799,7 @@ elif page == "Methodology":
     # Scoped CSS wrapper to eliminate residual bright backgrounds and avoid side-effects on other pages
     st.markdown("""
     <style>
-    #methodology-scope [data-testid="stExpander"] > details > summary {background:#2a3138 !important;color:#b9c1c7 !important;box-shadow:none !important;outline:none !important;border-radius:8px !important;-webkit-tap-highlight-color:transparent;}
+    #methodology-scope [data-testid="stExpander"] > details > summary {background:#2a3138 !important;color:#a7b0b6 !important;box-shadow:none !important;outline:none !important;border-radius:8px !important;-webkit-tap-highlight-color:transparent;}
     #methodology-scope [data-testid="stExpander"] > details > summary:hover,
     #methodology-scope [data-testid="stExpander"] > details > summary:focus,
     #methodology-scope [data-testid="stExpander"] > details > summary:focus-visible,
@@ -796,11 +809,11 @@ elif page == "Methodology":
     #methodology-scope .method-box *, #methodology-scope [data-testid="stMarkdownContainer"] * {background-color:transparent !important;}
     #methodology-scope ::selection {background:#3a4148 !important;color:#d4d8dc !important;}
     #methodology-scope .method-box {background:#2a3138;border:1px solid #3d4a53;border-radius:8px;padding:16px;margin-bottom:14px;}
-    #methodology-scope .phase-title {font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#c9ced2;}
-    #methodology-scope .method-box, #methodology-scope .method-box p, #methodology-scope .method-box li, #methodology-scope .method-box code, #methodology-scope .method-box pre {color:#c9ced2 !important;}
-    #methodology-scope .method-box h4, #methodology-scope .method-box h3 {color:#d4d8dc !important;}
-    #methodology-scope code, #methodology-scope pre {background:#353d45 !important;color:#d4d8dc !important;}
-    #methodology-scope .method-box a {color:#b7c2cc !important;}
+    #methodology-scope .phase-title {font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#b3bac0;}
+    #methodology-scope .method-box, #methodology-scope .method-box p, #methodology-scope .method-box li, #methodology-scope .method-box code, #methodology-scope .method-box pre {color:#adb5bb !important;}
+    #methodology-scope .method-box h4, #methodology-scope .method-box h3 {color:#bfc6cc !important;}
+    #methodology-scope code, #methodology-scope pre {background:#353d45 !important;color:#bfc6cc !important;}
+    #methodology-scope .method-box a {color:#aab4bc !important;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -906,3 +919,24 @@ elif page == "Methodology":
 
     st.info("For deeper derivations and justification, consult the linked Sphinx methodology pages and justification markdown documents.")
     st.markdown('</div>', unsafe_allow_html=True)
+    # High-specificity overrides injected AFTER content to defeat earlier global !important rules.
+    # We target Streamlit markdown containers & expander content directly so the color actually changes.
+    st.markdown("""
+    <style>
+    /* Methodology focused text darkening */
+    [data-testid='stExpander'] .streamlit-expanderContent p,
+    [data-testid='stExpander'] .streamlit-expanderContent li,
+    [data-testid='stExpander'] .streamlit-expanderContent code,
+    [data-testid='stExpander'] .streamlit-expanderContent pre,
+    [data-testid='stExpander'] .streamlit-expanderContent span { color:#9aa1a6 !important; }
+    [data-testid='stExpander'] .streamlit-expanderContent h3,
+    [data-testid='stExpander'] .streamlit-expanderContent h4 { color:#b0b6bb !important; }
+    /* Non-expander methodology intro blocks (Objective, Data Sources, headers) */
+    div:has(> h4:contains('Objective')) p,
+    div:has(> h4:contains('Objective')) li { color:#9aa1a6 !important; }
+    /* Generic fallback: apply only while Methodology page is selected using title heuristic */
+    h2.section-header:contains('Methodology') ~ div p { color:#9aa1a6 !important; }
+    /* Code blocks softer */
+    [data-testid='stMarkdownContainer'] pre, [data-testid='stMarkdownContainer'] code { background:#2b3034 !important; color:#b0b6bb !important; }
+    </style>
+    """, unsafe_allow_html=True)
