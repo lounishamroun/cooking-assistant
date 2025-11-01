@@ -143,12 +143,10 @@ def load_data():
     # Ethics: Original classification file remains untouched; enrichment is additive.
     if os.path.exists(enriched_path):
         df = _safe_read_csv(enriched_path)
-        if {"effort_score", "bayes_mean"} <= set(df.columns):
-            st.info("Loaded enriched metrics (effort_score, bayes_mean).")
+        # Silent load; enriched metrics presence no longer surfaces an info banner.
     else:
         df = _safe_read_csv(base_path)
-        if not df.empty:
-            st.info("Enriched file not found; using base dataset. Run: python scripts/enrich_metrics.py to add metrics.")
+        # Suppress noisy info popup; enrichment guidance moved to README.
     if not df.empty:
         main_column_mapping = {
             'id': 'ID',
@@ -835,6 +833,7 @@ elif page == "Methodology":
 
     #### 📊 Data Sources
     **Classification input**: `RAW_recipes.csv` (nutrition, names, tags, metadata).
+
     **Ranking inputs**:
     - `RAW_interactions.csv` (user ratings + review texts)
     - `recipes_classified.csv` (output of phases 0–3 with final type & confidence)
