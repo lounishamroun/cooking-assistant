@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cooking_assistant.analysis.reviews &#8212; Cooking Assistant v1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
+    <script src="../../../_static/documentation_options.js?v=5cb08e4e"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Cooking Assistant</a></h1>
+
+
+
+<p class="blurb">Bayesian ranking & multi-signal recipe classification</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=lounishamroun&repo=cooking-assistant&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methodology-classifier.html">Classification Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methodology-bayesian.html">Bayesian Ranking Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../design-rationale.html">Design Rationale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../evaluation-cheatsheet.html">Evaluation Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference.html">Reference API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for cooking_assistant.analysis.reviews</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Top review volume analysis.</span>
+
+<span class="sd">Generates per type × season tables of the most reviewed recipes and derives</span>
+<span class="sd">median statistics used to justify Bayesian parameter calibration.</span>
+<span class="sd">Outputs are saved as timestamped CSV files intended for transparent audit.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="n">RECIPE_TYPES</span><span class="p">,</span> <span class="n">SEASONS</span><span class="p">,</span> <span class="n">JUSTIFICATION_DIR</span>
+
+
+<div class="viewcode-block" id="analyze_top_reviews_by_type_season">
+<a class="viewcode-back" href="../../../reference.html#cooking_assistant.analysis.reviews.analyze_top_reviews_by_type_season">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">analyze_top_reviews_by_type_season</span><span class="p">(</span>
+    <span class="n">merged_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">recipes_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">JUSTIFICATION_DIR</span><span class="p">),</span>
+    <span class="n">top_n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compile top-N most reviewed recipes per (type, season) and medians.</span>
+
+<span class="sd">    For each recipe type and season the function counts total reviews</span>
+<span class="sd">    (all interactions) and valid reviews (rating &gt; 0), computes an average</span>
+<span class="sd">    rating over valid reviews, ranks recipes by total review volume, and</span>
+<span class="sd">    stores the top-N subset. Afterwards, a seasonal median review count</span>
+<span class="sd">    summary is generated and merged back for parameter justification.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    merged_df : pd.DataFrame</span>
+<span class="sd">        Interaction-level data joined to recipe metadata; must include</span>
+<span class="sd">        columns ``recipe_id``, ``rating``, ``season``, ``type``.</span>
+<span class="sd">    recipes_df : pd.DataFrame</span>
+<span class="sd">        Recipes catalog including columns ``id``, ``name``.</span>
+<span class="sd">    output_dir : str, default ``JUSTIFICATION_DIR``</span>
+<span class="sd">        Destination directory for the timestamped combined CSV.</span>
+<span class="sd">    top_n : int, default 100</span>
+<span class="sd">        Number of recipes retained per (type, season) combination.</span>
+<span class="sd">    verbose : bool, default True</span>
+<span class="sd">        When True prints progress and small summaries.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Dict</span>
+<span class="sd">        Keys: ``combined_results`` (pd.DataFrame), ``by_type_season`` (nested</span>
+<span class="sd">        dict), ``median_analysis`` (pd.DataFrame or None), ``files_created``</span>
+<span class="sd">        (paths of generated artifacts).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ANALYZING TOP </span><span class="si">{</span><span class="n">top_n</span><span class="si">}</span><span class="s2"> RECIPES BY NUMBER OF REVIEWS&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Create output directory</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1"># Store results</span>
+    <span class="n">all_results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">results_by_type_season</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c1"># Analyze each type × season combination</span>
+    <span class="k">for</span> <span class="n">recipe_type</span> <span class="ow">in</span> <span class="n">RECIPE_TYPES</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Analyzing </span><span class="si">{</span><span class="n">recipe_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Filter by recipe type</span>
+        <span class="n">type_df</span> <span class="o">=</span> <span class="n">merged_df</span><span class="p">[</span><span class="n">merged_df</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">recipe_type</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+        <span class="n">results_by_type_season</span><span class="p">[</span><span class="n">recipe_type</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">SEASONS</span><span class="p">:</span>
+            <span class="c1"># Filter by season</span>
+            <span class="n">season_df</span> <span class="o">=</span> <span class="n">type_df</span><span class="p">[</span><span class="n">type_df</span><span class="p">[</span><span class="s1">&#39;season&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">season</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">season_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   </span><span class="si">{</span><span class="n">season</span><span class="si">:</span><span class="s2">10s</span><span class="si">}</span><span class="s2"> : No data&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+            
+            <span class="c1"># Count reviews per recipe (all reviews including rating=0)</span>
+            <span class="n">total_reviews</span> <span class="o">=</span> <span class="n">season_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;total_reviews&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Count only valid ratings (rating &gt; 0)</span>
+            <span class="n">valid_ratings</span> <span class="o">=</span> <span class="n">season_df</span><span class="p">[</span><span class="n">season_df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span>
+                <span class="s1">&#39;rating&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">]</span>
+            <span class="p">})</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="n">valid_ratings</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">,</span> <span class="s1">&#39;valid_reviews&#39;</span><span class="p">,</span> <span class="s1">&#39;avg_valid_rating&#39;</span><span class="p">]</span>
+            
+            <span class="c1"># Merge with valid ratings</span>
+            <span class="n">review_stats</span> <span class="o">=</span> <span class="n">total_reviews</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">valid_ratings</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Fill missing values</span>
+            <span class="n">review_stats</span><span class="p">[</span><span class="s1">&#39;valid_reviews&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">review_stats</span><span class="p">[</span><span class="s1">&#39;valid_reviews&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">review_stats</span><span class="p">[</span><span class="s1">&#39;avg_valid_rating&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">review_stats</span><span class="p">[</span><span class="s1">&#39;avg_valid_rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            
+            <span class="c1"># Add recipe names</span>
+            <span class="n">review_stats</span> <span class="o">=</span> <span class="n">review_stats</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+                <span class="n">recipes_df</span><span class="p">[[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">]],</span>
+                <span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">,</span>
+                <span class="n">right_on</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">,</span>
+                <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+            
+            <span class="c1"># Add metadata</span>
+            <span class="n">review_stats</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recipe_type</span>
+            <span class="n">review_stats</span><span class="p">[</span><span class="s1">&#39;season&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">season</span>
+            
+            <span class="c1"># Sort by total reviews and take top N</span>
+            <span class="n">top_recipes</span> <span class="o">=</span> <span class="n">review_stats</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;total_reviews&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">top_n</span><span class="p">)</span>
+            
+            <span class="c1"># Store results</span>
+            <span class="n">results_by_type_season</span><span class="p">[</span><span class="n">recipe_type</span><span class="p">][</span><span class="n">season</span><span class="p">]</span> <span class="o">=</span> <span class="n">top_recipes</span>
+            <span class="n">all_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">top_recipes</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   </span><span class="si">{</span><span class="n">season</span><span class="si">:</span><span class="s2">10s</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">top_recipes</span><span class="p">)</span><span class="si">}</span><span class="s2"> recipes extracted&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;                 Max reviews : </span><span class="si">{</span><span class="n">top_recipes</span><span class="p">[</span><span class="s1">&#39;total_reviews&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;                 Min reviews : </span><span class="si">{</span><span class="n">top_recipes</span><span class="p">[</span><span class="s1">&#39;total_reviews&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;                 Avg rating  : </span><span class="si">{</span><span class="n">top_recipes</span><span class="p">[</span><span class="s1">&#39;avg_valid_rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Combine all results</span>
+    <span class="n">combined_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">all_results</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1"># Median analysis</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MEDIAN ANALYSIS (TOP </span><span class="si">{</span><span class="n">top_n</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="n">median_analysis</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">recipe_type</span> <span class="ow">in</span> <span class="n">RECIPE_TYPES</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">recipe_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">SEASONS</span><span class="p">:</span>
+            <span class="n">season_type_data</span> <span class="o">=</span> <span class="n">combined_results</span><span class="p">[</span>
+                <span class="p">(</span><span class="n">combined_results</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">recipe_type</span><span class="p">)</span> <span class="o">&amp;</span> 
+                <span class="p">(</span><span class="n">combined_results</span><span class="p">[</span><span class="s1">&#39;season&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">season</span><span class="p">)</span>
+            <span class="p">]</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">season_type_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">median_reviews</span> <span class="o">=</span> <span class="n">season_type_data</span><span class="p">[</span><span class="s1">&#39;total_reviews&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+                <span class="n">max_reviews</span> <span class="o">=</span> <span class="n">season_type_data</span><span class="p">[</span><span class="s1">&#39;total_reviews&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">min_reviews</span> <span class="o">=</span> <span class="n">season_type_data</span><span class="p">[</span><span class="s1">&#39;total_reviews&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                
+                <span class="n">median_analysis</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;Type_Recette&#39;</span><span class="p">:</span> <span class="n">recipe_type</span><span class="p">,</span>
+                    <span class="s1">&#39;Saison&#39;</span><span class="p">:</span> <span class="n">season</span><span class="p">,</span>
+                    <span class="s1">&#39;Mediane_Reviews_Top100&#39;</span><span class="p">:</span> <span class="n">median_reviews</span><span class="p">,</span>
+                    <span class="s1">&#39;Max_Reviews_Top100&#39;</span><span class="p">:</span> <span class="n">max_reviews</span><span class="p">,</span>
+                    <span class="s1">&#39;Min_Reviews_Top100&#39;</span><span class="p">:</span> <span class="n">min_reviews</span><span class="p">,</span>
+                    <span class="s1">&#39;Nb_Recettes_Analysees&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">season_type_data</span><span class="p">)</span>
+                <span class="p">})</span>
+                
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   </span><span class="si">{</span><span class="n">season</span><span class="si">:</span><span class="s2">10s</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="n">median_reviews</span><span class="si">:</span><span class="s2">6.0f</span><span class="si">}</span><span class="s2"> reviews (median)&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   </span><span class="si">{</span><span class="n">season</span><span class="si">:</span><span class="s2">10s</span><span class="si">}</span><span class="s2"> : No data&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Create median DataFrame</span>
+    <span class="n">median_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">median_analysis</span><span class="p">)</span> <span class="k">if</span> <span class="n">median_analysis</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    
+    <span class="c1"># Merge median statistics with combined results</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">median_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">median_df_merge</span> <span class="o">=</span> <span class="n">median_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;Type_Recette&#39;</span><span class="p">:</span> <span class="s1">&#39;type&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Saison&#39;</span><span class="p">:</span> <span class="s1">&#39;season&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Mediane_Reviews_Top100&#39;</span><span class="p">:</span> <span class="s1">&#39;median_reviews_type_season&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Max_Reviews_Top100&#39;</span><span class="p">:</span> <span class="s1">&#39;max_reviews_type_season&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Min_Reviews_Top100&#39;</span><span class="p">:</span> <span class="s1">&#39;min_reviews_type_season&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Nb_Recettes_Analysees&#39;</span><span class="p">:</span> <span class="s1">&#39;nb_recipes_in_top&#39;</span>
+        <span class="p">})</span>
+        
+        <span class="n">combined_results</span> <span class="o">=</span> <span class="n">combined_results</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">median_df_merge</span><span class="p">,</span>
+            <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;season&#39;</span><span class="p">],</span>
+            <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Median statistics added to combined file&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Generate timestamp for filename</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S&quot;</span><span class="p">)</span>
+    <span class="n">combined_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;top_</span><span class="si">{</span><span class="n">top_n</span><span class="si">}</span><span class="s2">_reviews_by_type_season_</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+    <span class="n">combined_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">combined_filename</span><span class="p">)</span>
+    
+    <span class="c1"># Reorganize columns for better readability</span>
+    <span class="n">column_order</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;season&#39;</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;recipe_id&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;total_reviews&#39;</span><span class="p">,</span> <span class="s1">&#39;valid_reviews&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;median_reviews_type_season&#39;</span>
+    <span class="p">]</span>
+    
+    <span class="c1"># Ensure all columns exist</span>
+    <span class="n">available_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">column_order</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">combined_results</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+    <span class="n">combined_results</span> <span class="o">=</span> <span class="n">combined_results</span><span class="p">[</span><span class="n">available_columns</span><span class="p">]</span>
+    
+    <span class="n">combined_results</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">combined_filepath</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Results saved: </span><span class="si">{</span><span class="n">combined_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Location: </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Total rows: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">combined_results</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;combined_results&#39;</span><span class="p">:</span> <span class="n">combined_results</span><span class="p">,</span>
+        <span class="s1">&#39;by_type_season&#39;</span><span class="p">:</span> <span class="n">results_by_type_season</span><span class="p">,</span>
+        <span class="s1">&#39;median_analysis&#39;</span><span class="p">:</span> <span class="n">median_df</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">median_df</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;files_created&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;combined&#39;</span><span class="p">:</span> <span class="n">combined_filepath</span>
+        <span class="p">}</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Top reviews analysis module&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Use this module via scripts or API&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2025, Leo Ivars, Lounis Hamroun, Alexandre Donnat, Omar Fekih.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/lounishamroun/cooking-assistant" class="github">
+        <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

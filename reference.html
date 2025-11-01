@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Reference API &#8212; Cooking Assistant v1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
+    <script src="_static/documentation_options.js?v=5cb08e4e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Evaluation Cheat Sheet" href="evaluation-cheatsheet.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Cooking Assistant</a></h1>
+
+
+
+<p class="blurb">Bayesian ranking & multi-signal recipe classification</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=lounishamroun&repo=cooking-assistant&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methodology-classifier.html">Classification Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="methodology-bayesian.html">Bayesian Ranking Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design-rationale.html">Design Rationale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation-cheatsheet.html">Evaluation Cheat Sheet</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Reference API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.config.get_latest_file_with_prefix"><code class="docutils literal notranslate"><span class="pre">get_latest_file_with_prefix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.config.validate_config"><code class="docutils literal notranslate"><span class="pre">validate_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.analysis.scoring.calculate_bayesian_scores"><code class="docutils literal notranslate"><span class="pre">calculate_bayesian_scores()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.analysis.scoring.calculate_top_n_by_type"><code class="docutils literal notranslate"><span class="pre">calculate_top_n_by_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.analysis.reviews.analyze_top_reviews_by_type_season"><code class="docutils literal notranslate"><span class="pre">analyze_top_reviews_by_type_season()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.analysis.seasonal.get_season_from_date"><code class="docutils literal notranslate"><span class="pre">get_season_from_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.data.loader.load_classified_recipes"><code class="docutils literal notranslate"><span class="pre">load_classified_recipes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.data.loader.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.data.loader.load_interactions"><code class="docutils literal notranslate"><span class="pre">load_interactions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.data.loader.load_recipes"><code class="docutils literal notranslate"><span class="pre">load_recipes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.data.processor.prepare_merged_data"><code class="docutils literal notranslate"><span class="pre">prepare_merged_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.data.downloader.has_any_timestamped_copy"><code class="docutils literal notranslate"><span class="pre">has_any_timestamped_copy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.data.downloader.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.utils.results.display_top_summary"><code class="docutils literal notranslate"><span class="pre">display_top_summary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.utils.results.save_all_type_results"><code class="docutils literal notranslate"><span class="pre">save_all_type_results()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.utils.results.save_combined_results_by_type"><code class="docutils literal notranslate"><span class="pre">save_combined_results_by_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking_assistant.utils.results.save_top_results"><code class="docutils literal notranslate"><span class="pre">save_top_results()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="evaluation-cheatsheet.html" title="previous chapter">Evaluation Cheat Sheet</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-cooking_assistant.config">
+<span id="reference-api"></span><h1>Reference API<a class="headerlink" href="#module-cooking_assistant.config" title="Link to this heading">¶</a></h1>
+<p>Central configuration module.</p>
+<p>Defines canonical paths, recipe type lists, season ordering, Bayesian
+parameter sets per type, and small helpers such as
+<code class="docutils literal notranslate"><span class="pre">get_latest_file_with_prefix</span></code> plus a <code class="docutils literal notranslate"><span class="pre">validate_config</span></code> sanity check.
+All paths are resolved relative to the package root enabling portable
+execution inside or outside containers.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.config.get_latest_file_with_prefix">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.config.</span></span><span class="sig-name descname"><span class="pre">get_latest_file_with_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/cooking-assistant/cooking-assistant/data/raw')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/config.html#get_latest_file_with_prefix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.config.get_latest_file_with_prefix" title="Link to this definition">¶</a></dt>
+<dd><p>Finds the most recent CSV file with a given prefix.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>prefix: File prefix (e.g., “RAW_recipes”)
+directory: Directory to search in</p>
+</dd>
+<dt>Returns:</dt><dd><p>Path to the most recent file</p>
+</dd>
+<dt>Raises:</dt><dd><p>FileNotFoundError: If no file is found</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prefix</strong> (<em>str</em>)</p></li>
+<li><p><strong>directory</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Path</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.config.validate_config">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.config.</span></span><span class="sig-name descname"><span class="pre">validate_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/config.html#validate_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.config.validate_config" title="Link to this definition">¶</a></dt>
+<dd><p>Validates that the configuration is correct.</p>
+</dd></dl>
+
+<p id="module-cooking_assistant.analysis.scoring">Bayesian scoring utilities.</p>
+<p>Implements the shrinkage quality score (Q-Score) and combined popularity
+adjusted final score used for seasonal top rankings.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.analysis.scoring.calculate_bayesian_scores">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.analysis.scoring.</span></span><span class="sig-name descname"><span class="pre">calculate_bayesian_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">season_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/analysis/scoring.html#calculate_bayesian_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.analysis.scoring.calculate_bayesian_scores" title="Link to this definition">¶</a></dt>
+<dd><p>Compute Q-Score, popularity weight and final score for a season slice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>season_df</strong> (<em>pd.DataFrame</em>) – Interaction rows for a single season (must include <code class="docutils literal notranslate"><span class="pre">recipe_id</span></code> and
+<code class="docutils literal notranslate"><span class="pre">rating</span></code> columns).</p></li>
+<li><p><strong>season_mean</strong> (<em>float</em>) – Baseline average rating for the season and recipe type.</p></li>
+<li><p><strong>params</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Bayesian parameters: <code class="docutils literal notranslate"><span class="pre">kb</span></code> (shrinkage strength), <code class="docutils literal notranslate"><span class="pre">kpop</span></code> (popularity
+saturation scale), <code class="docutils literal notranslate"><span class="pre">gamma</span></code> (popularity exponent).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One row per recipe with columns <code class="docutils literal notranslate"><span class="pre">reviews_in_season</span></code>, <code class="docutils literal notranslate"><span class="pre">avg_rating</span></code>,
+<code class="docutils literal notranslate"><span class="pre">valid_reviews</span></code>, <code class="docutils literal notranslate"><span class="pre">Q_Score_Bayesien</span></code>, <code class="docutils literal notranslate"><span class="pre">Poids_Popularite</span></code>, <code class="docutils literal notranslate"><span class="pre">Score_Final</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.analysis.scoring.calculate_top_n_by_type">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.analysis.scoring.</span></span><span class="sig-name descname"><span class="pre">calculate_top_n_by_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">merged_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipes_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['Spring',</span> <span class="pre">'Summer',</span> <span class="pre">'Fall',</span> <span class="pre">'Winter']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/analysis/scoring.html#calculate_top_n_by_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.analysis.scoring.calculate_top_n_by_type" title="Link to this definition">¶</a></dt>
+<dd><p>Produce per-season top-N ranking for a given recipe type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>merged_df</strong> (<em>pd.DataFrame</em>) – Full merged interactions dataset including <code class="docutils literal notranslate"><span class="pre">season</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">type</span></code>.</p></li>
+<li><p><strong>recipes_df</strong> (<em>pd.DataFrame</em>) – Recipe catalog for name lookup (columns <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>).</p></li>
+<li><p><strong>recipe_type</strong> (<em>str</em>) – One of the values in <code class="docutils literal notranslate"><span class="pre">RECIPE_TYPES</span></code>.</p></li>
+<li><p><strong>params</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Bayesian parameter set for this recipe type.</p></li>
+<li><p><strong>season_order</strong> (List[str], default <code class="docutils literal notranslate"><span class="pre">SEASON_ORDER</span></code>) – Ordering used to iterate and display seasons.</p></li>
+<li><p><strong>top_n</strong> (int, default <code class="docutils literal notranslate"><span class="pre">TOP_N</span></code>) – Number of recipes kept per season after sorting by final score.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>default True</em>) – When True prints intermediate progress and summaries.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping season → DataFrame of top-N scored recipes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, pd.DataFrame]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-cooking_assistant.analysis.reviews">Top review volume analysis.</p>
+<p>Generates per type × season tables of the most reviewed recipes and derives
+median statistics used to justify Bayesian parameter calibration.
+Outputs are saved as timestamped CSV files intended for transparent audit.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.analysis.reviews.analyze_top_reviews_by_type_season">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.analysis.reviews.</span></span><span class="sig-name descname"><span class="pre">analyze_top_reviews_by_type_season</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">merged_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipes_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/home/runner/work/cooking-assistant/cooking-assistant/analysis_parameter_justification/results_to_analyse'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/analysis/reviews.html#analyze_top_reviews_by_type_season"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.analysis.reviews.analyze_top_reviews_by_type_season" title="Link to this definition">¶</a></dt>
+<dd><p>Compile top-N most reviewed recipes per (type, season) and medians.</p>
+<p>For each recipe type and season the function counts total reviews
+(all interactions) and valid reviews (rating &gt; 0), computes an average
+rating over valid reviews, ranks recipes by total review volume, and
+stores the top-N subset. Afterwards, a seasonal median review count
+summary is generated and merged back for parameter justification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>merged_df</strong> (<em>pd.DataFrame</em>) – Interaction-level data joined to recipe metadata; must include
+columns <code class="docutils literal notranslate"><span class="pre">recipe_id</span></code>, <code class="docutils literal notranslate"><span class="pre">rating</span></code>, <code class="docutils literal notranslate"><span class="pre">season</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>.</p></li>
+<li><p><strong>recipes_df</strong> (<em>pd.DataFrame</em>) – Recipes catalog including columns <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>.</p></li>
+<li><p><strong>output_dir</strong> (str, default <code class="docutils literal notranslate"><span class="pre">JUSTIFICATION_DIR</span></code>) – Destination directory for the timestamped combined CSV.</p></li>
+<li><p><strong>top_n</strong> (<em>int</em><em>, </em><em>default 100</em>) – Number of recipes retained per (type, season) combination.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>default True</em>) – When True prints progress and small summaries.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys: <code class="docutils literal notranslate"><span class="pre">combined_results</span></code> (pd.DataFrame), <code class="docutils literal notranslate"><span class="pre">by_type_season</span></code> (nested
+dict), <code class="docutils literal notranslate"><span class="pre">median_analysis</span></code> (pd.DataFrame or None), <code class="docutils literal notranslate"><span class="pre">files_created</span></code>
+(paths of generated artifacts).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-cooking_assistant.analysis.seasonal">Season derivation utilities.</p>
+<p>Provides <a class="reference internal" href="#cooking_assistant.analysis.seasonal.get_season_from_date" title="cooking_assistant.analysis.seasonal.get_season_from_date"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_season_from_date()</span></code></a> which maps a pandas <code class="docutils literal notranslate"><span class="pre">Timestamp</span></code> to
+an astronomical season label (Spring, Summer, Fall, Winter). Invalid or
+missing dates yield <code class="docutils literal notranslate"><span class="pre">&quot;Unknown&quot;</span></code>.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.analysis.seasonal.get_season_from_date">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.analysis.seasonal.</span></span><span class="sig-name descname"><span class="pre">get_season_from_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/analysis/seasonal.html#get_season_from_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.analysis.seasonal.get_season_from_date" title="Link to this definition">¶</a></dt>
+<dd><p>Return the astronomical season for a given date.</p>
+<p>Boundaries (inclusive start, inclusive end):
+- Spring: 21 Mar – 20 Jun
+- Summer: 21 Jun – 20 Sep
+- Fall  : 21 Sep – 20 Dec
+- Winter: 21 Dec – 20 Mar</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>date</strong> (<em>pd.Timestamp</em>) – Parsed timestamp; <code class="docutils literal notranslate"><span class="pre">NaT</span></code> returns <code class="docutils literal notranslate"><span class="pre">&quot;Unknown&quot;</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One of <code class="docutils literal notranslate"><span class="pre">&quot;Spring&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Summer&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Fall&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Winter&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;Unknown&quot;</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-cooking_assistant.data.loader">CSV loading utilities for core datasets.</p>
+<p>Centralized helpers to retrieve the most recent timestamped raw recipe and
+interaction files and the classified recipe file produced by the
+multi‑signal classifier. All functions return new DataFrames and avoid
+in-place mutation.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.data.loader.load_classified_recipes">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.data.loader.</span></span><span class="sig-name descname"><span class="pre">load_classified_recipes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/cooking-assistant/cooking-assistant/data/interim/recipes_classified.csv')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/data/loader.html#load_classified_recipes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.data.loader.load_classified_recipes" title="Link to this definition">¶</a></dt>
+<dd><p>Load the classifier output containing the <code class="docutils literal notranslate"><span class="pre">type</span></code> column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (Path, default <code class="docutils literal notranslate"><span class="pre">RECIPES_CLASSIFIED_FILE</span></code>) – Location of the persisted classification output.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Recipes annotated with a final predicted type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>FileNotFoundError</strong> – If the file does not exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.data.loader.load_data">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.data.loader.</span></span><span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/cooking-assistant/cooking-assistant/data/raw')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/data/loader.html#load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.data.loader.load_data" title="Link to this definition">¶</a></dt>
+<dd><p>Convenience wrapper returning recipes and interactions DataFrames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_dir</strong> (Path, default <code class="docutils literal notranslate"><span class="pre">RAW_DATA_DIR</span></code>) – Directory in which raw timestamped files live.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(recipes_df,</span> <span class="pre">interactions_df)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(pd.DataFrame, pd.DataFrame)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.data.loader.load_interactions">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.data.loader.</span></span><span class="sig-name descname"><span class="pre">load_interactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/cooking-assistant/cooking-assistant/data/raw')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/data/loader.html#load_interactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.data.loader.load_interactions" title="Link to this definition">¶</a></dt>
+<dd><p>Load the latest raw interactions CSV matching <code class="docutils literal notranslate"><span class="pre">RAW_interactions*</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_dir</strong> (Path, default <code class="docutils literal notranslate"><span class="pre">RAW_DATA_DIR</span></code>) – Directory containing raw timestamped files.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>User–recipe interaction records (ratings + metadata).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>FileNotFoundError</strong> – If no matching file is found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.data.loader.load_recipes">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.data.loader.</span></span><span class="sig-name descname"><span class="pre">load_recipes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/cooking-assistant/cooking-assistant/data/raw')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/data/loader.html#load_recipes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.data.loader.load_recipes" title="Link to this definition">¶</a></dt>
+<dd><p>Load the latest raw recipes CSV matching <code class="docutils literal notranslate"><span class="pre">RAW_recipes*</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_dir</strong> (Path, default <code class="docutils literal notranslate"><span class="pre">RAW_DATA_DIR</span></code>) – Directory containing raw timestamped files.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Raw recipes data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>FileNotFoundError</strong> – If no matching file is found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-cooking_assistant.data.processor">Data merging and seasonal enrichment.</p>
+<p>This module provides a single helper <code class="docutils literal notranslate"><span class="pre">prepare_merged_data</span></code> that joins the
+recipes dataset with interactions, parses review dates safely, adds a
+season label (astronomical seasons) and extracts the review year.</p>
+<p>The function performs lightweight validation of required columns and can
+emit progress information for exploratory runs. It never mutates the input
+DataFrames in-place.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.data.processor.prepare_merged_data">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.data.processor.</span></span><span class="sig-name descname"><span class="pre">prepare_merged_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipes_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactions_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/data/processor.html#prepare_merged_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.data.processor.prepare_merged_data" title="Link to this definition">¶</a></dt>
+<dd><p>Merge recipes with interactions and enrich with seasonal metadata.</p>
+<p>The merged output contains one row per interaction joined to its
+corresponding recipe attributes. Review timestamps are converted to
+<code class="docutils literal notranslate"><span class="pre">datetime64[ns]</span></code> (coercing invalid values to <code class="docutils literal notranslate"><span class="pre">NaT</span></code>), then mapped
+to seasons via <a class="reference internal" href="#cooking_assistant.analysis.seasonal.get_season_from_date" title="cooking_assistant.analysis.seasonal.get_season_from_date"><code class="xref py py-func docutils literal notranslate"><span class="pre">cooking_assistant.analysis.seasonal.get_season_from_date()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>recipes_df</strong> (<em>pd.DataFrame</em>) – Must include columns <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>.</p></li>
+<li><p><strong>interactions_df</strong> (<em>pd.DataFrame</em>) – Must include columns <code class="docutils literal notranslate"><span class="pre">recipe_id</span></code>, <code class="docutils literal notranslate"><span class="pre">rating</span></code>, <code class="docutils literal notranslate"><span class="pre">date</span></code>.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>default True</em>) – When True, prints progress and distribution summaries.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Columns (at minimum): <code class="docutils literal notranslate"><span class="pre">recipe_id</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>, <code class="docutils literal notranslate"><span class="pre">rating</span></code>,
+<code class="docutils literal notranslate"><span class="pre">date</span></code>, <code class="docutils literal notranslate"><span class="pre">date_parsed</span></code>, <code class="docutils literal notranslate"><span class="pre">season</span></code>, <code class="docutils literal notranslate"><span class="pre">year</span></code>. Additional columns
+from the interactions input are preserved.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If required columns are missing in either input DataFrame.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-cooking_assistant.data.downloader">Kaggle dataset downloader.</p>
+<p>Provides a timestamped acquisition routine for the Food.com dataset. If a
+timestamped copy (or base file) already exists the download step is skipped
+to keep runs idempotent. Automatically handles cache corruption by forcing
+redownload.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.data.downloader.has_any_timestamped_copy">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.data.downloader.</span></span><span class="sig-name descname"><span class="pre">has_any_timestamped_copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stem</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/data/downloader.html#has_any_timestamped_copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.data.downloader.has_any_timestamped_copy" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stem</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.data.downloader.main">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.data.downloader.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/data/downloader.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.data.downloader.main" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p id="module-cooking_assistant.utils.results">Results persistence and console summaries.</p>
+<p>Utilities to serialize top-N seasonal ranking tables and produce readable
+terminal summaries. All functions operate on DataFrames already scored by
+the analysis module.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.utils.results.display_top_summary">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.utils.results.</span></span><span class="sig-name descname"><span class="pre">display_top_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">top_n_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['Spring',</span> <span class="pre">'Summer',</span> <span class="pre">'Fall',</span> <span class="pre">'Winter']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_top</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/utils/results.html#display_top_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.utils.results.display_top_summary" title="Link to this definition">¶</a></dt>
+<dd><p>Print a concise console summary of top scored recipes per season.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>top_n_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – Mapping season → ranked DataFrame.</p></li>
+<li><p><strong>recipe_type</strong> (<em>str</em>) – Category label for heading display.</p></li>
+<li><p><strong>season_order</strong> (List[str], default <code class="docutils literal notranslate"><span class="pre">SEASON_ORDER</span></code>) – Order in which seasons are displayed.</p></li>
+<li><p><strong>show_top</strong> (<em>int</em><em>, </em><em>default 5</em>) – Number of rows printed for each season.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.utils.results.save_all_type_results">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.utils.results.</span></span><span class="sig-name descname"><span class="pre">save_all_type_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/cooking-assistant/cooking-assistant/data/processed')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/utils/results.html#save_all_type_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.utils.results.save_all_type_results" title="Link to this definition">¶</a></dt>
+<dd><p>Persist combined top-N CSV for each recipe type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_results</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>]</em><em>]</em>) – Mapping recipe_type → (season → DataFrame).</p></li>
+<li><p><strong>results_path</strong> (Path, default <code class="docutils literal notranslate"><span class="pre">RESULTS_DIR</span></code>) – Destination directory.</p></li>
+<li><p><strong>top_n</strong> (<em>int</em><em>, </em><em>default 20</em>) – Number included per season (for filename purpose only).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping recipe_type → saved CSV path.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Path]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.utils.results.save_combined_results_by_type">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.utils.results.</span></span><span class="sig-name descname"><span class="pre">save_combined_results_by_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">all_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/utils/results.html#save_combined_results_by_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.utils.results.save_combined_results_by_type" title="Link to this definition">¶</a></dt>
+<dd><p>Create one CSV per recipe type aggregating all seasonal top lists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_results</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>]</em><em>]</em>) – Mapping recipe_type → (season → DataFrame) already scored and ranked.</p></li>
+<li><p><strong>results_path</strong> (<em>Path</em><em>, </em><em>optional</em>) – Destination directory; defaults to <code class="docutils literal notranslate"><span class="pre">PROCESSED_DATA_DIR</span></code> when <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping recipe_type → saved aggregated CSV path.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Path]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cooking_assistant.utils.results.save_top_results">
+<span class="sig-prename descclassname"><span class="pre">cooking_assistant.utils.results.</span></span><span class="sig-name descname"><span class="pre">save_top_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">top_n_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PosixPath('/home/runner/work/cooking-assistant/cooking-assistant/data/processed')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cooking_assistant/utils/results.html#save_top_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cooking_assistant.utils.results.save_top_results" title="Link to this definition">¶</a></dt>
+<dd><p>Persist a combined CSV of seasonal top-N rows for one recipe type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>top_n_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>]</em>) – Mapping season → ranked DataFrame.</p></li>
+<li><p><strong>recipe_type</strong> (<em>str</em>) – Category label (<code class="docutils literal notranslate"><span class="pre">plat</span></code>, <code class="docutils literal notranslate"><span class="pre">dessert</span></code>, <code class="docutils literal notranslate"><span class="pre">boisson</span></code>).</p></li>
+<li><p><strong>results_path</strong> (Path, default <code class="docutils literal notranslate"><span class="pre">RESULTS_DIR</span></code>) – Destination directory (created if missing).</p></li>
+<li><p><strong>top_n</strong> (<em>int</em><em>, </em><em>default 20</em>) – Number included per season (used only for filename convention).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Location of the saved CSV.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2025, Leo Ivars, Lounis Hamroun, Alexandre Donnat, Omar Fekih.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/reference.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/lounishamroun/cooking-assistant" class="github">
+        <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

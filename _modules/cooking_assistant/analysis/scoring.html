@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cooking_assistant.analysis.scoring &#8212; Cooking Assistant v1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
+    <script src="../../../_static/documentation_options.js?v=5cb08e4e"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Cooking Assistant</a></h1>
+
+
+
+<p class="blurb">Bayesian ranking & multi-signal recipe classification</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=lounishamroun&repo=cooking-assistant&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methodology-classifier.html">Classification Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../methodology-bayesian.html">Bayesian Ranking Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../design-rationale.html">Design Rationale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../evaluation-cheatsheet.html">Evaluation Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference.html">Reference API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for cooking_assistant.analysis.scoring</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Bayesian scoring utilities.</span>
+
+<span class="sd">Implements the shrinkage quality score (Q-Score) and combined popularity</span>
+<span class="sd">adjusted final score used for seasonal top rankings.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BAYESIAN_PARAMS</span><span class="p">,</span> <span class="n">SEASON_ORDER</span><span class="p">,</span> <span class="n">TOP_N</span>
+
+
+<div class="viewcode-block" id="calculate_bayesian_scores">
+<a class="viewcode-back" href="../../../reference.html#cooking_assistant.analysis.scoring.calculate_bayesian_scores">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_bayesian_scores</span><span class="p">(</span>
+    <span class="n">season_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">season_mean</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute Q-Score, popularity weight and final score for a season slice.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    season_df : pd.DataFrame</span>
+<span class="sd">        Interaction rows for a single season (must include ``recipe_id`` and</span>
+<span class="sd">        ``rating`` columns).</span>
+<span class="sd">    season_mean : float</span>
+<span class="sd">        Baseline average rating for the season and recipe type.</span>
+<span class="sd">    params : Dict[str, float]</span>
+<span class="sd">        Bayesian parameters: ``kb`` (shrinkage strength), ``kpop`` (popularity</span>
+<span class="sd">        saturation scale), ``gamma`` (popularity exponent).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        One row per recipe with columns ``reviews_in_season``, ``avg_rating``,</span>
+<span class="sd">        ``valid_reviews``, ``Q_Score_Bayesien``, ``Poids_Popularite``, ``Score_Final``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Total number of reviews in this season (including rating=0)</span>
+    <span class="n">recipe_review_counts</span> <span class="o">=</span> <span class="n">season_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;reviews_in_season&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Average rating per recipe (excludes rating=0)</span>
+    <span class="n">recipe_rating_means</span> <span class="o">=</span> <span class="n">season_df</span><span class="p">[</span><span class="n">season_df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+        <span class="s1">&#39;recipe_id&#39;</span>
+    <span class="p">)[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;avg_rating&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Number of VALID reviews (rating &gt; 0) - used for Bayesian calculation</span>
+    <span class="n">recipe_valid_counts</span> <span class="o">=</span> <span class="n">season_df</span><span class="p">[</span><span class="n">season_df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+        <span class="s1">&#39;recipe_id&#39;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;valid_reviews&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Merge all metrics</span>
+    <span class="n">score_df</span> <span class="o">=</span> <span class="n">recipe_review_counts</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">recipe_rating_means</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+        <span class="n">recipe_valid_counts</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Fill missing values (recipes without valid ratings)</span>
+    <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;avg_rating&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;avg_rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;valid_reviews&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;valid_reviews&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="c1"># Calculate Bayesian Q-Score</span>
+    <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;Q_Score_Bayesien&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;avg_rating&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;valid_reviews&#39;</span><span class="p">]</span> <span class="o">+</span> 
+         <span class="n">season_mean</span> <span class="o">*</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kb&#39;</span><span class="p">])</span> <span class="o">/</span> 
+        <span class="p">(</span><span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;valid_reviews&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kb&#39;</span><span class="p">])</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Calculate popularity weight</span>
+    <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;Poids_Popularite&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;reviews_in_season&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;kpop&#39;</span><span class="p">])</span>
+    <span class="p">)</span> <span class="o">**</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;gamma&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Calculate final score</span>
+    <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;Score_Final&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;Q_Score_Bayesien&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">score_df</span><span class="p">[</span><span class="s1">&#39;Poids_Popularite&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">score_df</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_top_n_by_type">
+<a class="viewcode-back" href="../../../reference.html#cooking_assistant.analysis.scoring.calculate_top_n_by_type">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_top_n_by_type</span><span class="p">(</span>
+    <span class="n">merged_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">recipes_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">recipe_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">season_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">SEASON_ORDER</span><span class="p">,</span>
+    <span class="n">top_n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">TOP_N</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Produce per-season top-N ranking for a given recipe type.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    merged_df : pd.DataFrame</span>
+<span class="sd">        Full merged interactions dataset including ``season`` &amp; ``type``.</span>
+<span class="sd">    recipes_df : pd.DataFrame</span>
+<span class="sd">        Recipe catalog for name lookup (columns ``id``, ``name``).</span>
+<span class="sd">    recipe_type : str</span>
+<span class="sd">        One of the values in ``RECIPE_TYPES``.</span>
+<span class="sd">    params : Dict[str, float]</span>
+<span class="sd">        Bayesian parameter set for this recipe type.</span>
+<span class="sd">    season_order : List[str], default ``SEASON_ORDER``</span>
+<span class="sd">        Ordering used to iterate and display seasons.</span>
+<span class="sd">    top_n : int, default ``TOP_N``</span>
+<span class="sd">        Number of recipes kept per season after sorting by final score.</span>
+<span class="sd">    verbose : bool, default True</span>
+<span class="sd">        When True prints intermediate progress and summaries.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Dict[str, pd.DataFrame]</span>
+<span class="sd">        Mapping season → DataFrame of top-N scored recipes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CALCULATING TOP </span><span class="si">{</span><span class="n">top_n</span><span class="si">}</span><span class="s2"> FOR: </span><span class="si">{</span><span class="n">recipe_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Filter data for this recipe type</span>
+    <span class="n">type_df</span> <span class="o">=</span> <span class="n">merged_df</span><span class="p">[</span><span class="n">merged_df</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">recipe_type</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">type_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️  No data for type &#39;</span><span class="si">{</span><span class="n">recipe_type</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    
+    <span class="c1"># Calculate reference average for each season</span>
+    <span class="n">season_means</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Seasonal baseline averages:&quot;</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">season_order</span><span class="p">:</span>
+        <span class="n">season_ratings</span> <span class="o">=</span> <span class="n">type_df</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">type_df</span><span class="p">[</span><span class="s1">&#39;season&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">season</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">type_df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">][</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">season_ratings</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">season_means</span><span class="p">[</span><span class="n">season</span><span class="p">]</span> <span class="o">=</span> <span class="n">season_ratings</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Fallback to global type average</span>
+            <span class="n">season_means</span><span class="p">[</span><span class="n">season</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_df</span><span class="p">[</span><span class="n">type_df</span><span class="p">[</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">][</span><span class="s1">&#39;rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   </span><span class="si">{</span><span class="n">season</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="n">season_means</span><span class="p">[</span><span class="n">season</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Calculate scores for each season</span>
+    <span class="n">top_n_by_season</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">🏆 Calculating tops by season:&quot;</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">season_order</span><span class="p">:</span>
+        <span class="n">season_df</span> <span class="o">=</span> <span class="n">type_df</span><span class="p">[</span><span class="n">type_df</span><span class="p">[</span><span class="s1">&#39;season&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">season</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">season_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   </span><span class="si">{</span><span class="n">season</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> : No data&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        
+        <span class="c1"># Calculate scores</span>
+        <span class="n">scores_df</span> <span class="o">=</span> <span class="n">calculate_bayesian_scores</span><span class="p">(</span>
+            <span class="n">season_df</span><span class="o">=</span><span class="n">season_df</span><span class="p">,</span>
+            <span class="n">season_mean</span><span class="o">=</span><span class="n">season_means</span><span class="p">[</span><span class="n">season</span><span class="p">],</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">params</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Add recipe names</span>
+        <span class="n">scores_df</span> <span class="o">=</span> <span class="n">scores_df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">recipes_df</span><span class="p">[[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">]],</span>
+            <span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;recipe_id&#39;</span><span class="p">,</span>
+            <span class="n">right_on</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">,</span>
+            <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+        
+        <span class="c1"># Add season column</span>
+        <span class="n">scores_df</span><span class="p">[</span><span class="s1">&#39;Saison&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">season</span>
+        
+        <span class="c1"># Sort by final score and keep top N</span>
+        <span class="n">top_n_df</span> <span class="o">=</span> <span class="n">scores_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+            <span class="s1">&#39;Score_Final&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">top_n</span><span class="p">)</span>
+        
+        <span class="c1"># Store in dictionary</span>
+        <span class="n">top_n_by_season</span><span class="p">[</span><span class="n">season</span><span class="p">]</span> <span class="o">=</span> <span class="n">top_n_df</span>
+        
+        <span class="c1"># Display summary</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   </span><span class="si">{</span><span class="n">season</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> : Top </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">top_n_df</span><span class="p">)</span><span class="si">}</span><span class="s2"> calculated&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;                   Best score    : </span><span class="si">{</span><span class="n">top_n_df</span><span class="p">[</span><span class="s1">&#39;Score_Final&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;                   Median score  : </span><span class="si">{</span><span class="n">top_n_df</span><span class="p">[</span><span class="s1">&#39;Score_Final&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calculation completed for </span><span class="si">{</span><span class="n">recipe_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">80</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">top_n_by_season</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Bayesian scores calculation module&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Use this module via scripts or API&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2025, Leo Ivars, Lounis Hamroun, Alexandre Donnat, Omar Fekih.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/lounishamroun/cooking-assistant" class="github">
+        <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

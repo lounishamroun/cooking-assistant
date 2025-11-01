@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cooking_assistant.config &#8212; Cooking Assistant v1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=f6a572b4" />
+    <script src="../../_static/documentation_options.js?v=5cb08e4e"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Cooking Assistant</a></h1>
+
+
+
+<p class="blurb">Bayesian ranking & multi-signal recipe classification</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=lounishamroun&repo=cooking-assistant&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methodology-classifier.html">Classification Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../methodology-bayesian.html">Bayesian Ranking Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../design-rationale.html">Design Rationale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../evaluation-cheatsheet.html">Evaluation Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">Reference API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for cooking_assistant.config</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Central configuration module.</span>
+
+<span class="sd">Defines canonical paths, recipe type lists, season ordering, Bayesian</span>
+<span class="sd">parameter sets per type, and small helpers such as</span>
+<span class="sd">``get_latest_file_with_prefix`` plus a ``validate_config`` sanity check.</span>
+<span class="sd">All paths are resolved relative to the package root enabling portable</span>
+<span class="sd">execution inside or outside containers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+<span class="c1"># DIRECTORY PATHS</span>
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+
+<span class="c1"># Project root directory</span>
+<span class="n">ROOT_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+
+<span class="c1"># Data directories</span>
+<span class="n">DATA_DIR</span> <span class="o">=</span> <span class="n">ROOT_DIR</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span>
+<span class="n">RAW_DATA_DIR</span> <span class="o">=</span> <span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s2">&quot;raw&quot;</span>
+<span class="n">INTERIM_DATA_DIR</span> <span class="o">=</span> <span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s2">&quot;interim&quot;</span>
+<span class="n">PROCESSED_DATA_DIR</span> <span class="o">=</span> <span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s2">&quot;processed&quot;</span>
+
+<span class="c1"># Output and reports</span>
+<span class="n">RESULTS_DIR</span> <span class="o">=</span> <span class="n">PROCESSED_DATA_DIR</span>  <span class="c1"># Use standard data/processed directory</span>
+<span class="n">RESULTS_PROCESSED_DIR</span> <span class="o">=</span> <span class="n">PROCESSED_DATA_DIR</span>  <span class="c1"># Same as above for compatibility</span>
+<span class="n">REPORTS_DIR</span> <span class="o">=</span> <span class="n">ROOT_DIR</span> <span class="o">/</span> <span class="s2">&quot;reports&quot;</span>
+<span class="n">FIGURES_DIR</span> <span class="o">=</span> <span class="n">REPORTS_DIR</span> <span class="o">/</span> <span class="s2">&quot;figures&quot;</span>
+
+<span class="c1"># Analysis and justification</span>
+<span class="n">JUSTIFICATION_DIR</span> <span class="o">=</span> <span class="n">ROOT_DIR</span> <span class="o">/</span> <span class="s2">&quot;analysis_parameter_justification&quot;</span> <span class="o">/</span> <span class="s2">&quot;results_to_analyse&quot;</span>
+
+<span class="c1"># Logs</span>
+<span class="n">LOGS_DIR</span> <span class="o">=</span> <span class="n">ROOT_DIR</span> <span class="o">/</span> <span class="s2">&quot;logs&quot;</span>
+
+<span class="c1"># Create directories if they don&#39;t exist</span>
+<span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="p">[</span><span class="n">RESULTS_DIR</span><span class="p">,</span> <span class="n">RESULTS_PROCESSED_DIR</span><span class="p">,</span> <span class="n">REPORTS_DIR</span><span class="p">,</span> <span class="n">FIGURES_DIR</span><span class="p">,</span> <span class="n">JUSTIFICATION_DIR</span><span class="p">,</span> <span class="n">LOGS_DIR</span><span class="p">,</span>
+                  <span class="n">RAW_DATA_DIR</span><span class="p">,</span> <span class="n">INTERIM_DATA_DIR</span><span class="p">,</span> <span class="n">PROCESSED_DATA_DIR</span><span class="p">]:</span>
+    <span class="n">directory</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+<span class="c1"># MAIN FILES</span>
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+
+<span class="c1"># Kaggle dataset handle</span>
+<span class="n">KAGGLE_DATASET_HANDLE</span> <span class="o">=</span> <span class="s2">&quot;shuyangli94/food-com-recipes-and-user-interactions&quot;</span>
+
+<span class="c1"># Input files (names will be found dynamically with timestamp)</span>
+<span class="n">RAW_RECIPES_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;RAW_recipes&quot;</span>
+<span class="n">RAW_INTERACTIONS_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;RAW_interactions&quot;</span>
+
+<span class="c1"># Output files</span>
+<span class="n">RECIPES_CLASSIFIED_FILE</span> <span class="o">=</span> <span class="n">INTERIM_DATA_DIR</span> <span class="o">/</span> <span class="s2">&quot;recipes_classified.csv&quot;</span>
+<span class="n">DOWNLOAD_LOG_FILE</span> <span class="o">=</span> <span class="n">LOGS_DIR</span> <span class="o">/</span> <span class="s2">&quot;data_set_download.log&quot;</span>
+
+
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+<span class="c1"># RECIPE TYPES AND SEASONS</span>
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+
+<span class="c1"># Recognized recipe types</span>
+<span class="n">RECIPE_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;plat&quot;</span><span class="p">,</span> <span class="s2">&quot;dessert&quot;</span><span class="p">,</span> <span class="s2">&quot;boisson&quot;</span><span class="p">]</span>
+
+<span class="c1"># Seasons (display order)</span>
+<span class="n">SEASONS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Spring&quot;</span><span class="p">,</span> <span class="s2">&quot;Summer&quot;</span><span class="p">,</span> <span class="s2">&quot;Fall&quot;</span><span class="p">,</span> <span class="s2">&quot;Winter&quot;</span><span class="p">]</span>
+<span class="n">SEASON_ORDER</span> <span class="o">=</span> <span class="n">SEASONS</span>  <span class="c1"># Alias for compatibility</span>
+
+
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+<span class="c1"># BAYESIAN PARAMETERS BY RECIPE TYPE</span>
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+
+<span class="c1"># Parameters are justified in docs/bayesian_parameters_docs_justification/</span>
+
+<span class="c1"># Parameters for PLATS (main dishes)</span>
+<span class="n">PARAMS_PLATS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;kb&#39;</span><span class="p">:</span> <span class="mi">65</span><span class="p">,</span>           <span class="c1"># Number of &quot;pseudo-reviews&quot; for Bayesian regression</span>
+    <span class="s1">&#39;kpop&#39;</span><span class="p">:</span> <span class="mf">47.0</span><span class="p">,</span>       <span class="c1"># Popularity threshold (reviews needed for 63% of max weight)</span>
+    <span class="s1">&#39;gamma&#39;</span><span class="p">:</span> <span class="mf">1.2</span>        <span class="c1"># Popularity amplification factor</span>
+<span class="p">}</span>
+
+<span class="c1"># Parameters for DESSERTS</span>
+<span class="n">PARAMS_DESSERTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;kb&#39;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>           <span class="c1"># Higher = more conservative (pulls toward mean)</span>
+    <span class="s1">&#39;kpop&#39;</span><span class="p">:</span> <span class="mf">40.0</span><span class="p">,</span>       <span class="c1"># Desserts generally have more reviews</span>
+    <span class="s1">&#39;gamma&#39;</span><span class="p">:</span> <span class="mf">1.2</span>        <span class="c1"># Moderate amplification</span>
+<span class="p">}</span>
+
+<span class="c1"># Parameters for BOISSONS (drinks)</span>
+<span class="n">PARAMS_BOISSONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;kb&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>           <span class="c1"># Low = trusts actual ratings more</span>
+    <span class="s1">&#39;kpop&#39;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>        <span class="c1"># Drinks have fewer reviews</span>
+    <span class="s1">&#39;gamma&#39;</span><span class="p">:</span> <span class="mf">0.7</span>        <span class="c1"># Low amplification (quality priority)</span>
+<span class="p">}</span>
+
+<span class="c1"># Mapping dictionary for easy access</span>
+<span class="n">BAYESIAN_PARAMS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;plat&#39;</span><span class="p">:</span> <span class="n">PARAMS_PLATS</span><span class="p">,</span>
+    <span class="s1">&#39;dessert&#39;</span><span class="p">:</span> <span class="n">PARAMS_DESSERTS</span><span class="p">,</span>
+    <span class="s1">&#39;boisson&#39;</span><span class="p">:</span> <span class="n">PARAMS_BOISSONS</span>
+<span class="p">}</span>
+
+
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+<span class="c1"># ANALYSIS CONSTANTS</span>
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+
+<span class="c1"># Number of recipes in the top ranking, you can adapt this rank as needed </span>
+<span class="n">TOP_N</span> <span class="o">=</span> <span class="mi">20</span>
+
+<span class="c1"># Number of recipes for popularity analysis</span>
+<span class="n">TOP_REVIEWS_ANALYSIS_N</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c1"># Epsilon threshold to avoid division by zero</span>
+<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">1e-6</span>
+
+
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+<span class="c1"># PATH HELPERS</span>
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+
+<div class="viewcode-block" id="get_latest_file_with_prefix">
+<a class="viewcode-back" href="../../reference.html#cooking_assistant.config.get_latest_file_with_prefix">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_latest_file_with_prefix</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">RAW_DATA_DIR</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Finds the most recent CSV file with a given prefix.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        prefix: File prefix (e.g., &quot;RAW_recipes&quot;)</span>
+<span class="sd">        directory: Directory to search in</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Path to the most recent file</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If no file is found</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Search with timestamp</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">directory</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_*.csv&quot;</span><span class="p">))</span>
+    
+    <span class="c1"># Search without timestamp if no file found</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">directory</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No CSV file starting with &#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">&#39; found in </span><span class="si">{</span><span class="n">directory</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="c1"># Return the most recent (alphabetical order with timestamp)</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+<span class="c1"># CONFIGURATION VALIDATION</span>
+<span class="c1"># ══════════════════════════════════════════════════════════════════════════════</span>
+
+<div class="viewcode-block" id="validate_config">
+<a class="viewcode-back" href="../../reference.html#cooking_assistant.config.validate_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_config</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validates that the configuration is correct.&quot;&quot;&quot;</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Check that recipe types match parameters</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">RECIPE_TYPES</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">BAYESIAN_PARAMS</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;RECIPE_TYPES don&#39;t match BAYESIAN_PARAMS keys&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Configuration errors:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">))</span></div>
+
+
+
+<span class="c1"># Validate on module loading</span>
+<span class="n">validate_config</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2025, Leo Ivars, Lounis Hamroun, Alexandre Donnat, Omar Fekih.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/lounishamroun/cooking-assistant" class="github">
+        <img src="../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

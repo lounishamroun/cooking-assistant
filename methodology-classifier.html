@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Classification Methodology &#8212; Cooking Assistant v1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
+    <script src="_static/documentation_options.js?v=5cb08e4e"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Bayesian Ranking Methodology" href="methodology-bayesian.html" />
+    <link rel="prev" title="Getting Started" href="getting-started.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Cooking Assistant</a></h1>
+
+
+
+<p class="blurb">Bayesian ranking & multi-signal recipe classification</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=lounishamroun&repo=cooking-assistant&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Classification Methodology</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#data-signals">1. Data Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#phases-overview">2. Phases Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#output-fields">3. Output Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-choices-rationale">4. Design Choices &amp; Rationale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#validation-quality-checks">5. Validation &amp; Quality Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#limitations-future-improvements">6. Limitations / Future Improvements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">7. Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="methodology-bayesian.html">Bayesian Ranking Methodology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design-rationale.html">Design Rationale</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaluation-cheatsheet.html">Evaluation Cheat Sheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="getting-started.html" title="previous chapter">Getting Started</a></li>
+      <li>Next: <a href="methodology-bayesian.html" title="next chapter">Bayesian Ranking Methodology</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="classification-methodology">
+<h1>Classification Methodology<a class="headerlink" href="#classification-methodology" title="Link to this heading">¶</a></h1>
+<p>Goal: Assign each recipe a type (Main Dish, Dessert, Beverage) with a confidence score using layered signals that are robust to sparse or noisy text.</p>
+<section id="data-signals">
+<h2>1. Data Signals<a class="headerlink" href="#data-signals" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Raw nutrition fields (calories, macronutrients, sugar, sodium, etc.)</p></li>
+<li><p>Tokenized name &amp; tag strings (lowercased, stemmed where applicable)</p></li>
+<li><p>Curated keyword lexicons (STRONG, SOFT) per type</p></li>
+</ul>
+</section>
+<section id="phases-overview">
+<h2>2. Phases Overview<a class="headerlink" href="#phases-overview" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Phase</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Key Outputs</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Structural Feature Extraction</p></td>
+<td><p>Derive flavor / energy indices from nutrition</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sweet_idx</span></code>, <code class="docutils literal notranslate"><span class="pre">savory_idx</span></code>, <code class="docutils literal notranslate"><span class="pre">lean_idx</span></code>, <code class="docutils literal notranslate"><span class="pre">hybrid_idx</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Prototype Similarity</p></td>
+<td><p>Map recipe vector → cosine similarity vs curated archetypes</p></td>
+<td><p>Raw structural logits</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>NLP Lexicon Scoring</p></td>
+<td><p>Score presence &amp; frequency of type-indicative terms</p></td>
+<td><p>Lexicon-derived logits</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>Arbitration Layer</p></td>
+<td><p>Combine structural &amp; lexical logits into final decision</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Type</span></code>, <code class="docutils literal notranslate"><span class="pre">Confidence_Percentage</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<section id="phase-0-structural-feature-extraction">
+<h3>Phase 0 – Structural Feature Extraction<a class="headerlink" href="#phase-0-structural-feature-extraction" title="Link to this heading">¶</a></h3>
+<p>Compute normalized densities &amp; energy proportions. Indices (example weights):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sweet_idx  = 0.55 * sugar_E% + 0.45 * sugar_density
+savory_idx = 0.55 * prot_density + 0.45 * (sod_density/10)
+lean_idx   = 1 - fat_E%
+hybrid_idx = min(sweet_idx, savory_idx)  # detects mixed profiles
+</pre></div>
+</div>
+<p>Rationale: Nutrition offers stable signals compared to noisy user-entered tags.</p>
+</section>
+<section id="phase-1-prototype-similarity">
+<h3>Phase 1 – Prototype Similarity<a class="headerlink" href="#phase-1-prototype-similarity" title="Link to this heading">¶</a></h3>
+<p>Prototypes encode typical flavor vectors:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Dessert  ≈ (0.68, 0.07, 0.40)
+Main Dish ≈ (0.12, 0.28, 0.45)
+Beverage ≈ (0.09, 0.05, 0.85)
+</pre></div>
+</div>
+<p>Each recipe’s (sweet_idx, savory_idx, lean_idx) is cosine-compared to these prototypes. Heuristics adjust logits (e.g. penalize implausibly low-cal savory items; boost fruit-forward desserts).</p>
+</section>
+<section id="phase-2-nlp-lexicon-scoring">
+<h3>Phase 2 – NLP Lexicon Scoring<a class="headerlink" href="#phase-2-nlp-lexicon-scoring" title="Link to this heading">¶</a></h3>
+<p>Two lexicons:</p>
+<ul class="simple">
+<li><p>STRONG (binary): decisive anchors (<code class="docutils literal notranslate"><span class="pre">cheesecake</span></code>, <code class="docutils literal notranslate"><span class="pre">smoothie</span></code>, <code class="docutils literal notranslate"><span class="pre">curry</span></code>).</p></li>
+<li><p>SOFT (counts): supportive context tokens.
+Combined formula (illustrative):</p></li>
+</ul>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>lexicon_logit = 3.0 * STRONG + 0.8 * SOFT + 0.1
+</pre></div>
+</div>
+<p>Then normalized (softmax) to produce lexical confidence per type.
+Rationale: Text captures dish intent even if nutrition ambiguous (e.g. beverages low-cal but distinctive names).</p>
+</section>
+<section id="phase-3-arbitration-layer">
+<h3>Phase 3 – Arbitration Layer<a class="headerlink" href="#phase-3-arbitration-layer" title="Link to this heading">¶</a></h3>
+<p>Blends structural and lexical logits:</p>
+<ol class="arabic simple">
+<li><p>Compute structural confidence: gap between top and second structural logits.</p></li>
+<li><p>Cases:</p>
+<ul class="simple">
+<li><p>High structural confidence → structural type retained; lexical used only to boost certainty if coherent.</p></li>
+<li><p>Medium structural confidence &amp; strong lexical evidence → lexical wins.</p></li>
+<li><p>Disagreement with low structural &amp; weak lexical → fallback to structural top (conservative).</p></li>
+</ul>
+</li>
+<li><p>Explicit overrides: beverage keywords (e.g. <code class="docutils literal notranslate"><span class="pre">smoothie</span></code>, <code class="docutils literal notranslate"><span class="pre">milkshake</span></code>) force Beverage if lexical score passes threshold.</p></li>
+<li><p>Edge exceptions: Handful of IDs manually corrected if known misclassification patterns.</p></li>
+</ol>
+</section>
+<section id="confidence-calculation">
+<h3>Confidence Calculation<a class="headerlink" href="#confidence-calculation" title="Link to this heading">¶</a></h3>
+<p>Base confidence = max(blended_logits) * 100 (rounded). Adjustments:</p>
+<ul class="simple">
+<li><p>Penalize if structural &amp; lexical disagree strongly (&gt; threshold delta).</p></li>
+<li><p>Slight bonus if both agree and have &gt; median certainty.</p></li>
+</ul>
+</section>
+</section>
+<section id="output-fields">
+<h2>3. Output Fields<a class="headerlink" href="#output-fields" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Type</span></code> – Final category.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Confidence_Percentage</span></code> – 0–100 summarizing blended certainty.</p></li>
+<li><p>(Interim) indices &amp; logits retained in interim file for auditing.</p></li>
+</ul>
+</section>
+<section id="design-choices-rationale">
+<h2>4. Design Choices &amp; Rationale<a class="headerlink" href="#design-choices-rationale" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Choice</p></th>
+<th class="head"><p>Reason</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Multi-phase instead of single text model</p></td>
+<td><p>Combats sparse / noisy titles; nutrition offers objective signals</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cosine similarity prototypes</p></td>
+<td><p>Lightweight, interpretable; avoids need for training embeddings</p></td>
+</tr>
+<tr class="row-even"><td><p>Two-tier lexicon (STRONG/SOFT)</p></td>
+<td><p>Preserves high-precision anchors while allowing broader context influence</p></td>
+</tr>
+<tr class="row-odd"><td><p>Arbitration logic (rule-based)</p></td>
+<td><p>Deterministic &amp; explainable under time constraints; future ML stacking possible</p></td>
+</tr>
+<tr class="row-even"><td><p>Manual overrides for beverages</p></td>
+<td><p>Beverage nutrition overlaps with dessert; keywords disambiguate</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="validation-quality-checks">
+<h2>5. Validation &amp; Quality Checks<a class="headerlink" href="#validation-quality-checks" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Spot check high-confidence predictions across types for semantic plausibility.</p></li>
+<li><p>Distribution balance: ensure no dominant type due solely to nutrition skew.</p></li>
+<li><p>Review misclassified borderline items (high hybrid_idx) for lexicon gaps → iteratively add missing terms.</p></li>
+</ul>
+</section>
+<section id="limitations-future-improvements">
+<h2>6. Limitations / Future Improvements<a class="headerlink" href="#limitations-future-improvements" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Manual prototype vectors; could be learned from clustered embeddings.</p></li>
+<li><p>Lexicon maintenance required for emerging culinary terms.</p></li>
+<li><p>Rule-based arbitration might miss nuanced cases (e.g., dessert beverages vs beverage desserts).</p></li>
+<li><p>Does not leverage full ingredient list semantics (only nutrition aggregates &amp; name tokens).</p></li>
+<li><p>Confidence formula heuristic, not calibrated probability.</p></li>
+</ul>
+</section>
+<section id="summary">
+<h2>7. Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h2>
+<p>The classifier combines interpretable nutritional structure with flexible lexical cues, then arbitrates using transparent rules to produce stable, auditable type assignments feeding seasonal ranking.</p>
+<p>For deeper numeric examples and parameter context, see the justification artifacts in <code class="docutils literal notranslate"><span class="pre">analysis_parameter_justification/</span></code>.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2025, Leo Ivars, Lounis Hamroun, Alexandre Donnat, Omar Fekih.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/methodology-classifier.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/lounishamroun/cooking-assistant" class="github">
+        <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
